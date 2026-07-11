@@ -60,7 +60,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [sourceLang, setSourceLangState] = useState<Language>(LANGUAGES[0]); // Default to English
   const [targetLang, setTargetLangState] = useState<Language>(LANGUAGES[1]); // Default to Spanish
   const { profile, setProfile, addXp: rawAddXp, completeQuiz: rawCompleteQuiz, updateHighScore: rawUpdateHighScore, unlockAchievement: rawUnlockAchievement, addMistake, completeSubLesson } = useUserProfile();
-  const [isHighContrast, setIsHighContrast] = useState(false);
+  // Dark mode: user's saved choice wins, otherwise follow the device theme.
+  const [isHighContrast, setIsHighContrast] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('darkMode');
+      if (saved !== null) return saved === 'true';
+      return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+    } catch {
+      return false;
+    }
+  });
   const [currentView, setCurrentView] = useState<AppView>('home');
   const [unlockedAchievementId, setUnlockedAchievementId] = useState<string | null>(null);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
@@ -214,13 +223,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const toggleHighContrast = useCallback(() => setIsHighContrast(prev => !prev), []);
 
-  // Apply High Contrast (Dark Mode) class to body
+  // Apply High Contrast (Dark Mode) class to body and remember the choice
   useEffect(() => {
     if (isHighContrast) {
       document.body.classList.add('high-contrast');
     } else {
       document.body.classList.remove('high-contrast');
     }
+    localStorage.setItem('darkMode', String(isHighContrast));
   }, [isHighContrast]);
 
   const setView = useCallback((view: AppView) => {
