@@ -1,11 +1,13 @@
 
 import React from 'react';
 import { useAppContext } from '../../contexts/AppContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useLocalization } from '../../contexts/LocalizationContext';
 import { useImmersion } from '../../contexts/ImmersionContext';
 
 export const Header = () => {
     const { isHighContrast, toggleHighContrast, profile, currentView, setView } = useAppContext();
+    const { username, signOut } = useAuth();
     const { t: locT, forceNative, setForceNative, isTargetLanguageActive } = useLocalization();
     const { immersionLevel, setImmersionLevel } = useImmersion();
 
@@ -91,6 +93,21 @@ export const Header = () => {
                             `}
                         >
                             {isHighContrast ? '🌕' : '🌑'}
+                        </button>
+
+                        {username && (
+                            <span className={`hidden sm:block text-sm font-bold ml-2 ${isHighContrast ? 'text-slate-300' : 'text-desert'}`}>
+                                {username}
+                            </span>
+                        )}
+                        <button
+                            onClick={() => signOut()}
+                            title="Log out"
+                            className={`p-2 rounded-full hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold ml-1 text-xl
+                                ${isHighContrast ? 'text-slate-300' : 'text-desert'}
+                            `}
+                        >
+                            🚪
                         </button>
                     </div>
                 </div>

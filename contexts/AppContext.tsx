@@ -1,6 +1,8 @@
 
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { useUserProfile } from '../hooks/useUserProfile';
+import { useAuth } from './AuthContext';
+import { fetchProfile, saveProfile, fetchLanguageState, saveLanguageState } from '../services/progressService';
 import type { Language, UserProfile, AppView, Quest, QuestType, QuizQuestion, SkillTree, SkillNode, NodeState, SagaMap, MapNode, Scenario, Mistake, SubLesson } from '../types';
 import { LANGUAGES } from '../constants/languages';
 import { ACHIEVEMENTS } from '../constants/achievements';
@@ -109,6 +111,57 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       localStorage.setItem('sagaMap', JSON.stringify(sagaMap));
     }
   }, [sagaMap]);
+
+  // --- Supabase progress sync ---
+  const { user, username } = useAuth();
+  const isHydratedRef = useRef(false);
+
+  // Hydrate from the server on login (and re-fetch language state on language switch).
+  useEffect(() => {
+    isHydratedRef.current = false; // block saves while (re)hydrating
+    if (!user) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const [serverProfile, langState] = await Promise.all([
+        fetchProfile(user.id),
+        fetchLanguageState(user.id, targetLang.code),
+      ]);
+      if (cancelled) return;
+
+      if (serverProfile) {
+        updateProfile(serverProfile);
+      } else {
+        // First login: create the row so the account always has a profile.
+        await saveProfile(user.id, username, profile);
+      }
+      setSkillTreeState(langState.skillTree);
+      setSagaMapState(langState.sagaMap);
+      isHydratedRef.current = true;
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, targetLang.code]);
+
+  // Debounced save of profile changes.
+  useEffect(() => {
+    if (!user || !isHydratedRef.current) return;
+    const timer = setTimeout(() => {
+      if (isHydratedRef.current) saveProfile(user.id, username, profile);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [profile, user, username]);
+
+  // Debounced save of generated content (skill tree / saga map) per language.
+  useEffect(() => {
+    if (!user || !isHydratedRef.current) return;
+    if (!skillTree && !sagaMap) return;
+    const timer = setTimeout(() => {
+      if (isHydratedRef.current) saveLanguageState(user.id, targetLang.code, skillTree, sagaMap);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [skillTree, sagaMap, user, targetLang.code]);
 
   const setSkillTree = useCallback((tree: SkillTree) => {
     setSkillTreeState(tree);

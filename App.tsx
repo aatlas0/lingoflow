@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { AppProvider, useAppContext } from './contexts/AppContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthView } from './views/AuthView';
 import { LocalizationProvider, useLocalization } from './contexts/LocalizationContext';
 import { Header } from './components/layout/Header';
 import { AnimatedBackground } from './components/layout/AnimatedBackground';
@@ -38,6 +40,19 @@ const ErrorDisplay: React.FC = () => {
 
 const AppContent: React.FC = () => {
     const { currentView, isHighContrast, showLevelUpModal, newLevel, closeLevelUpModal, currentSubLesson, setCurrentSubLesson, setView } = useAppContext();
+    const { session, isAuthLoading } = useAuth();
+
+    // Auth gate: nothing is accessible without an account.
+    if (isAuthLoading) {
+        return (
+            <div className="h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-brand-turquoise/30 border-t-brand-turquoise rounded-full animate-spin"></div>
+            </div>
+        );
+    }
+    if (!session) {
+        return <AuthView />;
+    }
 
     const renderView = () => {
         switch (currentView) {
@@ -86,13 +101,15 @@ import { ImmersionProvider } from './contexts/ImmersionContext';
 
 const App = () => {
     return (
-        <AppProvider>
-            <LocalizationProvider>
-                <ImmersionProvider>
-                    <AppContent />
-                </ImmersionProvider>
-            </LocalizationProvider>
-        </AppProvider>
+        <AuthProvider>
+            <AppProvider>
+                <LocalizationProvider>
+                    <ImmersionProvider>
+                        <AppContent />
+                    </ImmersionProvider>
+                </LocalizationProvider>
+            </AppProvider>
+        </AuthProvider>
     );
 };
 
