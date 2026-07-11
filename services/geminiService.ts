@@ -5,7 +5,19 @@ const API_KEY = process.env.API_KEY;
 if (!API_KEY) {
   console.warn("API_KEY environment variable not set. Please set it to use Gemini API.");
 }
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+// Lazy init: constructing GoogleGenAI without a key throws in the browser,
+// and at module scope that would blank the entire app on load.
+let _ai: GoogleGenAI | null = null;
+const getAi = (): GoogleGenAI => {
+  if (!_ai) {
+    if (!API_KEY) {
+      throw new Error("Gemini API key is not configured. Set GEMINI_API_KEY and rebuild the app.");
+    }
+    _ai = new GoogleGenAI({ apiKey: API_KEY });
+  }
+  return _ai;
+};
 
 // Helper to parse Darija responses which may not be perfect JSON
 export const parseDarijaResponse = (text: string): DarijaText => {
@@ -66,7 +78,7 @@ const mapStrictQuestionToQuizQuestion = (q: StrictQuizQuestion, isDarija: boolea
 
 const _generateQuizInternal = async (prompt: string, isDarija: boolean): Promise<QuizQuestion[]> => {
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -209,7 +221,7 @@ export const createChatSession = (sourceLang: Language, targetLang: Language): C
     ? getDarijaChatSystemInstruction(sourceLang)
     : getStandardChatSystemInstruction(sourceLang, targetLang);
 
-  const chat = ai.chats.create({
+  const chat = getAi().chats.create({
     model: 'gemini-2.5-pro',
     config: {
       systemInstruction: systemInstruction,
@@ -269,7 +281,7 @@ Your task is to provide 3 - 5 short, engaging cultural insights(Cultural Nuggets
 export const generateCulturalNuggets = async (targetLang: Language): Promise<CulturalNugget[]> => {
   const prompt = getNuggetsPrompt(targetLang);
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -357,7 +369,7 @@ export const generateSkillTree = async (sourceLang: Language, targetLang: Langua
   const prompt = getSkillTreePrompt(sourceLang, targetLang, userLevel);
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -417,7 +429,7 @@ ${JSON.stringify(stringsToTranslate, null, 2)}
 `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -581,7 +593,7 @@ export const generateSagaMap = async (
     `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -750,7 +762,7 @@ Topics: ${node.topics?.join(', ') || 'General Adventure'}.
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -821,7 +833,7 @@ Output JSON array format:
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
