@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LingoAtlas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            desert: '#F5E6C4',
+            'desert-dark': '#E0D2B4',
+            'dark-green': '#2F4F4F',
+            'brand-turquoise': '#008C8C',
+            'deep-red': '#8B1E3F',
+            gold: '#D4AF37',
+            'night-bg': '#0f172a',
+            'night-card': '#1e293b',
+            'night-text': '#e2e8f0',
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-out',
+            'fade-in-up': 'fadeInUp 0.5s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #008C8C;
+      /* brand-turquoise */
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2F4F4F;
+      /* dark-green */
+    }
+
+    /* Dark Mode (formerly High Contrast) Overrides */
+    body.high-contrast {
+      background-color: #0f172a;
+      /* night-bg */
+      color: #e2e8f0;
+      /* night-text */
+    }
+
+    /* Global overrides for Dark Mode */
+    .high-contrast .bg-desert,
+    .high-contrast .bg-desert-dark,
+    .high-contrast .bg-white,
+    .high-contrast .bg-white\/60,
+    .high-contrast .bg-white\/80,
+    .high-contrast .bg-white\/90,
+    .high-contrast .bg-white\/50,
+    .high-contrast .bg-white\/40,
+    .high-contrast .bg-gray-50,
+    .high-contrast .bg-gray-100 {
+      background-color: #1e293b !important;
+      /* night-card */
+      color: #e2e8f0 !important;
+      border-color: #334155 !important;
+    }
+
+    .high-contrast .text-dark-green {
+      color: #F5E6C4 !important;
+      /* desert light for text */
+    }
+
+    .high-contrast .text-dark-green\/80,
+    .high-contrast .text-dark-green\/60,
+    .high-contrast .text-dark-green\/90 {
+      color: #cbd5e1 !important;
+    }
+
+    /* Accents in Dark Mode */
+    .high-contrast .bg-brand-turquoise {
+      background-color: #008C8C !important;
+      color: #ffffff !important;
+    }
+
+    .high-contrast .bg-dark-green {
+      background-color: #0f172a !important;
+      border-color: #D4AF37 !important;
+    }
+
+    .high-contrast .text-brand-turquoise {
+      color: #2dd4bf !important;
+      /* lighter turquoise */
+    }
+
+    .high-contrast .border-brand-turquoise {
+      border-color: #008C8C !important;
+    }
+
+    .high-contrast .bg-deep-red {
+      background-color: #991b1b !important;
+    }
+
+    .high-contrast .text-deep-red {
+      color: #f87171 !important;
+    }
+
+    .high-contrast .text-gold,
+    .high-contrast .border-gold {
+      color: #fbbf24 !important;
+      border-color: #fbbf24 !important;
+    }
+
+    /* Inputs in Dark Mode */
+    .high-contrast select,
+    .high-contrast input {
+      background-color: #334155 !important;
+      color: white !important;
+      border-color: #64748b !important;
+    }
+
+    .high-contrast .shadow-xl,
+    .high-contrast .shadow-lg {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* New Overrides for Chat & Correction Panel */
+    .high-contrast .bg-white\/95 {
+      background-color: #1e293b !important;
+      color: #e2e8f0 !important;
+      border-color: #334155 !important;
+    }
+
+    .high-contrast .text-dark-green\/70,
+    .high-contrast .text-dark-green\/50,
+    .high-contrast .text-dark-green\/40,
+    .high-contrast .text-dark-green\/30 {
+      color: #94a3b8 !important;
+      /* slate-400 */
+    }
+
+    .high-contrast .placeholder-dark-green\/40::placeholder {
+      color: #94a3b8 !important;
+    }
+
+    .high-contrast .bg-desert\/30 {
+      background-color: #334155 !important;
+      /* lighter slate for contrast on dark card */
+    }
+
+    .high-contrast .border-desert-dark\/20,
+    .high-contrast .border-desert-dark\/50 {
+      border-color: #334155 !important;
+    }
+  </style>
+</head>
+
+<body class="bg-desert text-dark-green font-sans transition-colors duration-500 h-screen overflow-hidden flex flex-col">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>

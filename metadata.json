@@ -1,0 +1,5 @@
+{
+  "name": "LingoAtlas",
+  "description": "An AI-powered language learning application that offers dynamic quizzes, a timed lightning round, a conversational chat tutor, and a player profile with XP and achievements. Learn any language from any language, with special support for Moroccan Darija.",
+  "requestFramePermissions": []
+}
