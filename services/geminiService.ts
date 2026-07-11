@@ -264,7 +264,7 @@ const getNuggetsSchema = () => ({
 const getNuggetsPrompt = (targetLang: Language) => {
   const isDarija = targetLang.code === 'ary';
   return `
-You are the Cultural Expert Module for LingoAtlas, an app for learning ${targetLang.name}.
+You are the Cultural Expert Module for LingoFlow, an app for learning ${targetLang.name}.
 
 Your task is to provide 3 - 5 short, engaging cultural insights(Cultural Nuggets) related to ${targetLang.name}. These insights will be shown to learners to enrich their experience.
 
@@ -343,7 +343,7 @@ const getSkillTreeSchema = () => ({
 const getSkillTreePrompt = (sourceLang: Language, targetLang: Language, userLevel: number) => {
   const isDarija = targetLang.code === 'ary';
   return `
-You are an expert AI Language Curriculum Designer for a gamified app called LingoAtlas.
+You are an expert AI Language Curriculum Designer for a gamified app called LingoFlow.
 Your task is to create a structured and personalized Skill Tree for a ${sourceLang.name} speaker learning ${targetLang.name}.
 The user is currently at Level ${userLevel}.
 

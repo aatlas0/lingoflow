@@ -13,7 +13,7 @@ export const englishStrings: Record<string, string> = {
   'header.back': 'Back to Menu',
 
   // Home View (Setup)
-  'home.title': 'Welcome to LingoAtlas',
+  'home.title': 'Welcome to LingoFlow',
   'home.subtitle': 'Your personalized AI-powered journey to mastering a new language. Choose your languages and start your adventure!',
   'home.sourceLangLabel': 'I speak:',
   'home.targetLangLabel': 'I want to learn:',

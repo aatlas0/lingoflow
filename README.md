@@ -1,4 +1,4 @@
-# LingoAtlas 🗺️
+# LingoFlow 🗺️
 
 AI-powered, gamified language learning app. Every quiz, chat, skill tree, and adventure map is generated on the fly by the Google Gemini API — with first-class support for **Moroccan Darija** (dual Arabic/Latin script).
 

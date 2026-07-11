@@ -110,7 +110,21 @@ export const HomeView = () => {
       {/* Left Side: Hero Text */}
       <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left max-w-2xl">
         <div className="w-24 h-24 bg-gold rounded-full flex items-center justify-center text-dark-green font-bold text-5xl ring-4 ring-desert shadow-2xl mb-8 transform hover:scale-105 transition-transform">L</div>
-        <h1 className={`text-5xl md:text-7xl font-extrabold mb-6 drop-shadow-sm leading-tight ${isHighContrast ? 'text-white' : 'text-dark-green'}`} dangerouslySetInnerHTML={{ __html: t('home.title').replace('LingoAtlas', '<span class="text-brand-turquoise">LingoAtlas</span>') }}></h1>
+        <h1 className={`text-5xl md:text-7xl font-extrabold mb-6 drop-shadow-sm leading-tight ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
+          {(() => {
+            // Highlight the app name without injecting translated text as HTML
+            const title = t('home.title');
+            const idx = title.indexOf('LingoFlow');
+            if (idx === -1) return title;
+            return (
+              <>
+                {title.slice(0, idx)}
+                <span className="text-brand-turquoise">LingoFlow</span>
+                {title.slice(idx + 'LingoFlow'.length)}
+              </>
+            );
+          })()}
+        </h1>
         <p className={`text-xl md:text-2xl mb-8 font-medium leading-relaxed ${isHighContrast ? 'text-slate-300' : 'text-dark-green/90'}`}>
           {t('home.subtitle')}
         </p>

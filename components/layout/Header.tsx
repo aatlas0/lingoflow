@@ -52,7 +52,7 @@ export const Header = () => {
                             `}>L</div>
                             <span className={`font-bold text-xl tracking-wider hidden sm:block
                                 ${isHighContrast ? 'text-white' : 'text-desert'}
-                            `}>LingoAtlas</span>
+                            `}>LingoFlow</span>
                         </button>
                     </div>
 

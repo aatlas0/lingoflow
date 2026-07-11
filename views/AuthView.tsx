@@ -64,7 +64,7 @@ export const AuthView: React.FC = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gold text-dark-green text-3xl font-black ring-4 ring-desert shadow-xl mb-4">
             L
           </div>
-          <h1 className="text-4xl font-black text-dark-green tracking-tight">LingoAtlas</h1>
+          <h1 className="text-4xl font-black text-dark-green tracking-tight">LingoFlow</h1>
           <p className="text-dark-green/70 mt-2">Your journey to a new language starts here.</p>
         </div>
 

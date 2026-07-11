@@ -1,4 +1,4 @@
--- LingoAtlas database schema
+-- LingoFlow database schema
 -- Run this in the Supabase SQL Editor (or let the agent apply it via MCP).
 
 -- ============================================================
