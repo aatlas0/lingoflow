@@ -5,7 +5,19 @@ const API_KEY = process.env.API_KEY;
 if (!API_KEY) {
   console.warn("API_KEY environment variable not set. Please set it to use TTS.");
 }
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+// Lazy init: constructing GoogleGenAI without a key throws in the browser,
+// and at module scope that would blank the entire app on load.
+let _ai: GoogleGenAI | null = null;
+const getAi = (): GoogleGenAI => {
+  if (!_ai) {
+    if (!API_KEY) {
+      throw new Error("Gemini API key is not configured. Set GEMINI_API_KEY and rebuild the app.");
+    }
+    _ai = new GoogleGenAI({ apiKey: API_KEY });
+  }
+  return _ai;
+};
 
 // Audio decoding functions
 function decode(base64: string): Uint8Array {
@@ -51,7 +63,7 @@ export const playTextAsSpeech = async (text: string): Promise<void> => {
   if (!text) return;
   
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAi().models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: text }] }],
       config: {
