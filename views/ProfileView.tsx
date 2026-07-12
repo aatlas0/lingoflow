@@ -68,13 +68,16 @@ const AchievementIcon: React.FC<{ achievementId: string; isUnlocked: boolean }> 
 }
 
 export const ProfileView = () => {
-    const { profile, isHighContrast } = useAppContext();
+    const { profile, isHighContrast, targetLang } = useAppContext();
     const { t } = useLocalization();
 
     return (
         <div className="w-full h-full max-w-7xl mx-auto p-4 flex flex-col overflow-hidden animate-fade-in">
             <div className="shrink-0 text-center mb-6 md:mb-10">
                 <h1 className={`text-3xl md:text-5xl font-bold mb-2 drop-shadow-sm ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>{t('profile.title')}</h1>
+                <p className={`text-sm font-bold uppercase tracking-widest ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
+                    Your journey in {targetLang.name} · progress is saved per language
+                </p>
             </div>
 
             <div className="flex-grow overflow-y-auto pr-2 pb-10 custom-scrollbar">

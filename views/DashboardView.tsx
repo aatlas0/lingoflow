@@ -71,22 +71,24 @@ const MenuCard: React.FC<MenuCardProps> = ({ title, description, icon, onClick, 
     );
 };
 
-// One-time invitation to calibrate the starting level for brand-new accounts.
+// Invitation to calibrate the starting level — shown per language, so
+// starting a new language offers a fresh placement test.
 const PlacementBanner: React.FC = () => {
-    const { profile, setView, isHighContrast } = useAppContext();
+    const { profile, setView, isHighContrast, targetLang } = useAppContext();
+    const dismissKey = `placementDismissed-${targetLang.code}`;
     const [dismissed, setDismissed] = useState<boolean>(() => {
-        try { return localStorage.getItem('placementDismissed') === 'true'; } catch { return false; }
+        try { return localStorage.getItem(dismissKey) === 'true'; } catch { return false; }
     });
 
-    const isNewUser = profile.xp === 0
+    const isFreshLanguage = profile.xp === 0
         && profile.quizzesCompleted === 0
-        && !profile.unlockedAchievements.includes('placement_complete');
+        && !profile.placementDone;
 
-    if (!isNewUser || dismissed) return null;
+    if (!isFreshLanguage || dismissed) return null;
 
     const dismiss = () => {
         setDismissed(true);
-        try { localStorage.setItem('placementDismissed', 'true'); } catch { /* ignore */ }
+        try { localStorage.setItem(dismissKey, 'true'); } catch { /* ignore */ }
     };
 
     return (

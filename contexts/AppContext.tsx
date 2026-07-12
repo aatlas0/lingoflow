@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useAuth } from './AuthContext';
-import { fetchProfile, saveProfile, fetchLanguageState, saveLanguageState } from '../services/progressService';
+import { fetchProfile, saveProfile, fetchLanguageState, saveLanguageState, extractProgress, FRESH_LANGUAGE_PROGRESS } from '../services/progressService';
 import type { Language, UserProfile, AppView, Quest, QuestType, QuizQuestion, SkillTree, SkillNode, NodeState, SagaMap, MapNode, Scenario, Mistake, SubLesson } from '../types';
 import { LANGUAGES } from '../constants/languages';
 import { ACHIEVEMENTS } from '../constants/achievements';
@@ -157,6 +157,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Language-pair restore must run once per login, NOT on every language
   // switch — otherwise a not-yet-saved switch would be yanked back.
   const restoredLangForUserRef = useRef<string | null>(null);
+  // The profile as fetched at login — the source for one-time adoption of
+  // legacy account-level progress into its language's record.
+  const loginProfileRef = useRef<UserProfile | null>(null);
 
   // Hydrate from the server on login (and re-fetch language state on language switch).
   useEffect(() => {
@@ -167,24 +170,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     let cancelled = false;
     setIsHydrating(true);
+    // Re-runs of this effect for the same user are language switches: the
+    // account-global fields are already live locally (and possibly newer
+    // than the server), so only the language state is fetched then.
+    const isLanguageSwitch = restoredLangForUserRef.current === user.id;
     (async () => {
       const [serverProfile, langState] = await Promise.all([
-        fetchProfile(user.id),
+        isLanguageSwitch ? Promise.resolve(null) : fetchProfile(user.id),
         fetchLanguageState(user.id, targetLang.code),
       ]);
       if (cancelled) return;
 
-      if (serverProfile) {
-        updateProfile(serverProfile);
-        // Synced progress isn't a "level up" — don't fire the celebration modal.
-        previousLevelRef.current = Math.max(previousLevelRef.current, serverProfile.level);
-      } else {
-        // First login: create the row so the account always has a profile.
-        await saveProfile(user.id, username, profile);
+      if (!isLanguageSwitch) {
+        loginProfileRef.current = serverProfile;
+        if (!serverProfile) {
+          // First login: create the row so the account always has a profile.
+          await saveProfile(user.id, username, profile);
+        }
       }
 
       // Restore the saved language pair (server first, device fallback).
-      if (restoredLangForUserRef.current !== user.id) {
+      // Must run before applying progress — it may switch the language.
+      if (!isLanguageSwitch) {
         restoredLangForUserRef.current = user.id;
         let sourceCode = serverProfile?.sourceLangCode ?? undefined;
         let targetCode = serverProfile?.targetLangCode ?? undefined;
@@ -200,11 +207,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (source) setSourceLangState(source);
         if (target && currentView === 'home') setView('dashboard'); // returning users skip the picker
         if (target && target.code !== targetLang.code) {
-          // Switching re-runs this effect, which hydrates the right language.
+          // Adopt the account globals (streak, achievements…) now; the
+          // re-run of this effect hydrates the language-specific part.
+          if (serverProfile) {
+            previousLevelRef.current = Math.max(previousLevelRef.current, serverProfile.level);
+            updateProfile(serverProfile);
+          }
           setTargetLangState(target);
           return;
         }
       }
+
+      // Per-language progress: prefer this language's own record; adopt the
+      // legacy account-level values once for the language the account was
+      // last using; a brand-new language starts fresh at level 1.
+      const legacySource = serverProfile ?? loginProfileRef.current;
+      const legacyBelongsHere = legacySource != null &&
+        (legacySource.targetLangCode == null || legacySource.targetLangCode === targetLang.code);
+      const progress = langState.progress
+        ?? (legacyBelongsHere ? extractProgress(legacySource) : FRESH_LANGUAGE_PROGRESS);
+
+      updateProfile({ ...(serverProfile ?? {}), ...progress });
+      // Levels arriving via sync or language switch aren't "level ups".
+      previousLevelRef.current = progress.level;
 
       setSkillTreeState(langState.skillTree);
       setSagaMapState(langState.sagaMap);
@@ -224,15 +249,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => clearTimeout(timer);
   }, [profile, user, username]);
 
-  // Debounced save of generated content (skill tree / saga map) per language.
+  // Debounced save of per-language state: generated content AND progress
+  // (level, xp, mistakes, lessons) for the current target language.
   useEffect(() => {
     if (!user || !isHydratedRef.current) return;
-    if (!skillTree && !sagaMap) return;
     const timer = setTimeout(() => {
-      if (isHydratedRef.current) saveLanguageState(user.id, targetLang.code, skillTree, sagaMap);
+      if (isHydratedRef.current) {
+        saveLanguageState(user.id, targetLang.code, skillTree, sagaMap, extractProgress(profile));
+      }
     }, 1500);
     return () => clearTimeout(timer);
-  }, [skillTree, sagaMap, user, targetLang.code]);
+  }, [skillTree, sagaMap, profile, user, targetLang.code]);
+
+  // Latest-state mirror so the language switcher can flush without stale closures.
+  const latestStateRef = useRef({ profile, skillTree, sagaMap, targetLang });
+  useEffect(() => {
+    latestStateRef.current = { profile, skillTree, sagaMap, targetLang };
+  });
 
   const setSkillTree = useCallback((tree: SkillTree) => {
     setSkillTreeState(tree);
@@ -399,13 +432,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [updateProfile]);
 
   const setTargetLang = useCallback((lang: Language) => {
+    // Flush the outgoing language's pending progress immediately — the
+    // debounced savers get cancelled by the language change.
+    const prev = latestStateRef.current;
+    if (user && isHydratedRef.current && prev.targetLang.code !== lang.code) {
+      saveProfile(user.id, username, { ...prev.profile, targetLangCode: lang.code });
+      saveLanguageState(user.id, prev.targetLang.code, prev.skillTree, prev.sagaMap, extractProgress(prev.profile));
+    }
     setTargetLangState(lang);
     updateProfile({ targetLangCode: lang.code });
     persistLangPairLocally({ target: lang.code });
     if (lang.code === 'ary') {
       unlockAchievement('darija_explorer');
     }
-  }, [unlockAchievement, updateProfile]);
+  }, [unlockAchievement, updateProfile, user, username]);
 
 
 

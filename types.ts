@@ -41,18 +41,33 @@ export interface Mistake {
 }
 
 export interface UserProfile {
+  // --- Per-language progress: swapped in/out when the target language changes ---
   level: number;
   xp: number;
   highScore: number;
   quizzesCompleted: number;
-  streak: number;
-  lastActiveDate: string | null; // local 'YYYY-MM-DD' of the last day with activity
   immersionScore: number; // 0-100
-  unlockedAchievements: string[];
   mistakes: Mistake[];
   completedSubLessons: string[]; // Array of SubLesson IDs
+  placementDone?: boolean; // placement test taken for this language
+  // --- Account-global: identity, habit, trophies ---
+  streak: number;
+  lastActiveDate: string | null; // local 'YYYY-MM-DD' of the last day with activity
+  unlockedAchievements: string[];
   sourceLangCode: string | null; // persisted language pair
   targetLangCode: string | null;
+}
+
+// The per-language slice of UserProfile, stored per (user, target language).
+export interface LanguageProgress {
+  level: number;
+  xp: number;
+  highScore: number;
+  quizzesCompleted: number;
+  immersionScore: number;
+  mistakes: Mistake[];
+  completedSubLessons: string[];
+  placementDone?: boolean;
 }
 
 export interface CulturalNugget {

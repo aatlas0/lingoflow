@@ -11,9 +11,14 @@ const usernameToEmail = (username: string) => `${username.trim().toLowerCase()}@
 
 // Local progress is device-scoped; wipe it on identity changes so one
 // account's progress never leaks into another account on the same device.
-const LOCAL_PROGRESS_KEYS = ['userProfile', 'skillTree', 'sagaMap', 'dailyQuests', 'dailyQuestsDate', 'langPair', 'placementDismissed'];
+const LOCAL_PROGRESS_KEYS = ['userProfile', 'skillTree', 'sagaMap', 'dailyQuests', 'dailyQuestsDate', 'langPair'];
 const clearLocalProgress = () => {
   LOCAL_PROGRESS_KEYS.forEach(key => localStorage.removeItem(key));
+  // Per-language placement dismissals ('placementDismissed-<lang>')
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('placementDismissed')) localStorage.removeItem(key);
+  }
 };
 
 interface AuthContextType {

@@ -16,6 +16,7 @@ const initialProfile: UserProfile = {
   unlockedAchievements: [],
   mistakes: [],
   completedSubLessons: [],
+  placementDone: false,
   sourceLangCode: null,
   targetLangCode: null,
 };

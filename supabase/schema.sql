@@ -49,6 +49,7 @@ create table if not exists public.language_state (
   target_lang text not null,
   skill_tree jsonb,
   saga_map jsonb,
+  progress jsonb, -- per-language level/xp/mistakes/lessons (LanguageProgress)
   updated_at timestamptz not null default now(),
   primary key (user_id, target_lang)
 );

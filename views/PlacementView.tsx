@@ -72,7 +72,7 @@ export const PlacementView: React.FC = () => {
     const finish = (finalCorrect: number) => {
         const level = scoreToLevel(finalCorrect);
         setResultLevel(level);
-        updateProfile({ level, xp: (level - 1) * XP_PER_LEVEL });
+        updateProfile({ level, xp: (level - 1) * XP_PER_LEVEL, placementDone: true });
         unlockAchievement('placement_complete');
         setPhase('done');
     };
@@ -96,7 +96,7 @@ export const PlacementView: React.FC = () => {
     };
 
     const skip = () => {
-        try { localStorage.setItem('placementDismissed', 'true'); } catch { /* ignore */ }
+        try { localStorage.setItem(`placementDismissed-${targetLang.code}`, 'true'); } catch { /* ignore */ }
         setView('dashboard');
     };
 
