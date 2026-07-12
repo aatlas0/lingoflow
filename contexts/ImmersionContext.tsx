@@ -11,8 +11,9 @@ interface ImmersionContextType {
 const ImmersionContext = createContext<ImmersionContextType | undefined>(undefined);
 
 export const ImmersionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { profile, updateProfile, sourceLang } = useAppContext();
+    const { profile, updateProfile, sourceLang, targetLang } = useAppContext();
     const [nativeTranslations, setNativeTranslations] = React.useState<Record<string, string>>({});
+    const [targetTranslations, setTargetTranslations] = React.useState<Record<string, string>>({});
 
     // Use profile score, default to 0 if undefined
     const immersionLevel = profile.immersionScore || 0;
@@ -64,6 +65,53 @@ export const ImmersionProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         fetchNativeTranslations();
     }, [sourceLang]);
 
+    // Fetch the TARGET-language side of the immersion dictionary, so raising
+    // immersion shows the language you're actually learning. Darija uses the
+    // authentic built-in strings; English needs no translation.
+    // Skipped until immersion can actually display them (lowest tier is 30).
+    const needsTargetStrings = immersionLevel >= 30;
+    React.useEffect(() => {
+        let cancelled = false;
+        const fetchTargetTranslations = async () => {
+            if (!needsTargetStrings || targetLang.code === 'ary' || targetLang.code === 'en') {
+                setTargetTranslations({});
+                return;
+            }
+
+            // localStorage: one paid translation call per language per device.
+            const cacheKey = `immersion-target-${targetLang.code}-v1`;
+            try {
+                const cached = localStorage.getItem(cacheKey);
+                if (cached) {
+                    setTargetTranslations(JSON.parse(cached));
+                    return;
+                }
+            } catch { /* ignore */ }
+
+            const stringsToTranslate = Object.entries(dictionary)
+                .reduce((acc, [key, entry]) => {
+                    acc[key] = entry.native;
+                    return acc;
+                }, {} as Record<string, string>);
+
+            try {
+                const englishLang = { code: 'en', name: 'English' };
+                const translations = await import('../services/geminiService').then(m =>
+                    m.generateUITranslations(stringsToTranslate, englishLang, targetLang)
+                );
+                if (cancelled) return;
+                setTargetTranslations(translations);
+                try { localStorage.setItem(cacheKey, JSON.stringify(translations)); } catch { /* ignore */ }
+            } catch (err) {
+                console.error('Failed to translate immersion strings to target language:', err);
+            }
+        };
+
+        setTargetTranslations({});
+        fetchTargetTranslations();
+        return () => { cancelled = true; };
+    }, [targetLang.code, needsTargetStrings]);
+
     // Helper function to translate based on current level
     const t = (key: TranslationKey): string => {
         const entry = dictionary[key];
@@ -74,7 +122,10 @@ export const ImmersionProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         // If current level is greater than or equal to the tier, show target language
         if (immersionLevel >= entry.tier) {
-            return entry.target;
+            if (targetLang.code === 'ary') return entry.target; // built-in authentic Darija
+            // Never show the wrong language: fall back to native until the
+            // generated target translations arrive.
+            return targetTranslations[key] || nativeTranslations[key] || entry.native;
         }
 
         // Otherwise show native language (translated if available, else English default)

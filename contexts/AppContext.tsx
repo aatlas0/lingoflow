@@ -307,7 +307,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setNewLevel(profile.level);
       setShowLevelUpModal(true);
       previousLevelRef.current = profile.level;
+      // Leveling up gently raises immersion (never lowers it — and the user
+      // can always pull the slider back down).
+      const suggestedImmersion = Math.min(90, (profile.level - 1) * 10);
+      if ((profile.immersionScore || 0) < suggestedImmersion) {
+        updateProfile({ immersionScore: suggestedImmersion });
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.level]);
 
   const closeLevelUpModal = useCallback(() => setShowLevelUpModal(false), []);

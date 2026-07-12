@@ -7,7 +7,7 @@ import { useImmersion } from '../../contexts/ImmersionContext';
 import { effectiveStreak } from '../../utils/streak';
 
 export const Header = () => {
-    const { isHighContrast, toggleHighContrast, profile, currentView, setView } = useAppContext();
+    const { isHighContrast, toggleHighContrast, profile, currentView, setView, targetLang } = useAppContext();
     const { username, signOut } = useAuth();
     const { t: locT, forceNative, setForceNative, isTargetLanguageActive } = useLocalization();
     const { immersionLevel, setImmersionLevel } = useImmersion();
@@ -57,15 +57,21 @@ export const Header = () => {
                         </button>
                     </div>
 
-                    {/* Immersion Debug Slider */}
-                    <div className="hidden md:flex items-center gap-2 mx-4 bg-black/20 px-3 py-1 rounded-full">
-                        <span className={`text-xs font-bold uppercase ${isHighContrast ? 'text-teal-300' : 'text-gold'}`}>Immersion: {immersionLevel}%</span>
+                    {/* Immersion: how much of the adventure speaks the target language.
+                        Auto-rises with level; the user can adjust it any time. */}
+                    <div
+                        className="hidden md:flex items-center gap-2 mx-4 bg-black/20 px-3 py-1 rounded-full"
+                        title={`Immersion: how much of the adventure appears in ${targetLang.name}. It rises as you level up — adjust it any time.`}
+                    >
+                        <span className={`text-xs font-bold uppercase ${isHighContrast ? 'text-teal-300' : 'text-gold'}`}>🌊 Immersion {immersionLevel}%</span>
                         <input
                             type="range"
                             min="0"
                             max="100"
+                            step="10"
                             value={immersionLevel}
                             onChange={(e) => setImmersionLevel(parseInt(e.target.value))}
+                            aria-label={`Immersion level: percentage of the interface shown in ${targetLang.name}`}
                             className="w-24 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-brand-turquoise"
                         />
                     </div>

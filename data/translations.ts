@@ -1,6 +1,6 @@
 export interface TranslationEntry {
     native: string;
-    target: string;
+    target: string; // Darija reference text; other languages are generated at runtime
     tier: number; // 0-100: Percentage at which this term switches to target language
 }
 
@@ -46,38 +46,40 @@ export type TranslationKey =
     | 'lbl_monologue_text'
     | 'lbl_how_to_play';
 
+// Tier ladder: 30% concrete nouns → 40-50% titles & short labels →
+// 60-70% descriptions & UI chrome → 80% buttons/instructions → 90% long prose.
 export const dictionary: Record<TranslationKey, TranslationEntry> = {
-    // Navigation (Tier 101: Never translate for now)
-    nav_home: { native: 'Home', target: 'Dar (دار)', tier: 101 },
-    nav_map: { native: 'Map', target: 'Kharita (خريطة)', tier: 101 },
-    nav_profile: { native: 'Profile', target: 'Wajh (وجه)', tier: 101 },
+    // Navigation
+    nav_home: { native: 'Home', target: 'Dar (دار)', tier: 60 },
+    nav_map: { native: 'Map', target: 'Kharita (خريطة)', tier: 60 },
+    nav_profile: { native: 'Profile', target: 'Wajh (وجه)', tier: 60 },
 
-    // Common Buttons (Tier 101: English UI)
-    btn_start: { native: 'Begin Adventure', target: 'Bda Moughamara (بدأ المغامرة)', tier: 101 },
-    btn_close: { native: 'Close', target: 'Sedd (سد)', tier: 101 },
+    // Common Buttons
+    btn_start: { native: 'Begin Adventure', target: 'Bda Moughamara (بدأ المغامرة)', tier: 80 },
+    btn_close: { native: 'Close', target: 'Sedd (سد)', tier: 80 },
 
-    // Labels (Tier 101: English UI)
-    lbl_objective: { native: 'Current Objective', target: 'Hadaf Hali (هدف حالي)', tier: 101 },
-    lbl_lore: { native: 'Region Lore', target: 'Asatir Mintaqa (أساطير المنطقة)', tier: 101 },
-    lbl_streak: { native: 'Day Streak', target: 'Tatabu (تتابع)', tier: 101 },
-    lbl_xp: { native: 'Total XP', target: 'Majmou XP (مجموع XP)', tier: 101 },
+    // Labels
+    lbl_objective: { native: 'Current Objective', target: 'Hadaf Hali (هدف حالي)', tier: 70 },
+    lbl_lore: { native: 'Region Lore', target: 'Asatir Mintaqa (أساطير المنطقة)', tier: 70 },
+    lbl_streak: { native: 'Day Streak', target: 'Tatabu (تتابع)', tier: 60 },
+    lbl_xp: { native: 'Total XP', target: 'Majmou XP (مجموع XP)', tier: 60 },
 
-    // Lesson Specific (Tier 101: English UI)
-    lbl_chapter: { native: 'Chapters', target: 'Fousoul (فصول)', tier: 101 },
-    lbl_mission: { native: 'Mission Brief', target: 'Mouhimma (مهمة)', tier: 101 },
-    lbl_knowledge: { native: 'Knowledge Required', target: 'Ma\'rifa Matlouba (معرفة مطلوبة)', tier: 101 },
+    // Lesson Specific
+    lbl_chapter: { native: 'Chapters', target: 'Fousoul (فصول)', tier: 70 },
+    lbl_mission: { native: 'Mission Brief', target: 'Mouhimma (مهمة)', tier: 70 },
+    lbl_knowledge: { native: 'Knowledge Required', target: 'Ma\'rifa Matlouba (معرفة مطلوبة)', tier: 80 },
 
-    // City Locations (Tier 2: 30%)
+    // City Locations (concrete nouns — first to flip)
     city_gate: { native: 'The Gate', target: 'Bab (باب)', tier: 30 },
     city_market: { native: 'The Market', target: 'Souq (سوق)', tier: 30 },
     city_palace: { native: 'The Palace', target: 'Qsar (قصر)', tier: 30 },
 
-    // Map UI (Tier 101: English UI)
-    lbl_start_here: { native: 'Start Here!', target: 'Bda Hna! (بدا هنا!)', tier: 101 },
-    lbl_distance: { native: 'Distance', target: 'Masafa (مسافة)', tier: 101 },
-    lbl_days: { native: 'Days', target: 'Ayyam (أيام)', tier: 101 },
+    // Map UI
+    lbl_start_here: { native: 'Start Here!', target: 'Bda Hna! (بدا هنا!)', tier: 40 },
+    lbl_distance: { native: 'Distance', target: 'Masafa (مسافة)', tier: 50 },
+    lbl_days: { native: 'Days', target: 'Ayyam (أيام)', tier: 50 },
 
-    // Biome Lore (Tier 4: 90% - Advanced)
+    // Biome Lore (long prose — last to flip)
     lore_desert: {
         native: "The Whispering Sands hold secrets of an ancient empire. Only those who master the language of the sun can find the hidden oases.",
         target: "Rimal al-Hamsa tahmil asrar imbaratoriya qadima. Faqat man yutqin lughat al-shams yajid al-wahat al-makhfiya. (الرمال الهامسة تحمل أسرار إمبراطورية قديمة. فقط من يتقن لغة الشمس يجد الواحات المخفية.)",
@@ -94,19 +96,19 @@ export const dictionary: Record<TranslationKey, TranslationEntry> = {
         tier: 90
     },
 
-    // City View UI (Tier 101: English UI)
-    lbl_episode: { native: 'Episode', target: 'Halqa (حلقة)', tier: 101 },
-    lbl_reward: { native: 'Reward', target: 'Mukafa\'a (مكافأة)', tier: 101 },
-    btn_replay: { native: 'Replay', target: 'A\'id (أعد)', tier: 101 },
-    lbl_monologue: { native: "Hero's Inner Monologue", target: "Munajat al-Batal (مناجاة البطل)", tier: 101 },
+    // City View UI
+    lbl_episode: { native: 'Episode', target: 'Halqa (حلقة)', tier: 60 },
+    lbl_reward: { native: 'Reward', target: 'Mukafa\'a (مكافأة)', tier: 60 },
+    btn_replay: { native: 'Replay', target: 'A\'id (أعد)', tier: 80 },
+    lbl_monologue: { native: "Hero's Inner Monologue", target: "Munajat al-Batal (مناجاة البطل)", tier: 80 },
 
-    // Missing Saga Map Strings (Tier 101: English UI)
-    lbl_hero_journal: { native: "Hero's Journal", target: "Yawmiyat al-Batal (يوميات البطل)", tier: 101 },
-    lbl_unknown_dest: { native: "Unknown Destination", target: "Wijha Majhoula (وجهة مجهولة)", tier: 101 },
-    lbl_charting: { native: "Charting the Unknown Lands...", target: "Rasm al-Aradi al-Majhoula... (رسم الأراضي المجهولة...)", tier: 101 },
-    lbl_how_to_play: { native: 'How to Play', target: 'Kifash Tel3ab (كيفاش تلعب)', tier: 101 },
+    // Saga Map Strings
+    lbl_hero_journal: { native: "Hero's Journal", target: "Yawmiyat al-Batal (يوميات البطل)", tier: 70 },
+    lbl_unknown_dest: { native: "Unknown Destination", target: "Wijha Majhoula (وجهة مجهولة)", tier: 80 },
+    lbl_charting: { native: "Charting the Unknown Lands...", target: "Rasm al-Aradi al-Majhoula... (رسم الأراضي المجهولة...)", tier: 80 },
+    lbl_how_to_play: { native: 'How to Play', target: 'Kifash Tel3ab (كيفاش تلعب)', tier: 80 },
 
-    // Mock Episode Content (Tier 2-4)
+    // Mock Episode Content
     ep_gates_title: { native: "The Gates of", target: "Abwab (أبواب)", tier: 30 },
     ep_intro: { native: "You arrive at the legendary city, tired and thirsty. But the guards are turning strangers away.", target: "Tasilo ila al-madina al-usturiya, mut'aban wa atchan. Lakin al-hurras yamna'oun al-ghuraba'. (تصل إلى المدينة الأسطورية، متعبا وعطشانا. لكن الحراس يمنعون الغرباء.)", tier: 50 },
 
