@@ -6,6 +6,10 @@ if (!API_KEY) {
   console.warn("API_KEY environment variable not set. Please set it to use Gemini API.");
 }
 
+// Single model for all text generation: flash-lite is ~6x cheaper than flash
+// ($0.25/M in, $1.50/M out) and handles this app's structured-JSON workloads.
+const TEXT_MODEL = "gemini-3.1-flash-lite";
+
 // Lazy init: constructing GoogleGenAI without a key throws in the browser,
 // and at module scope that would blank the entire app on load.
 let _ai: GoogleGenAI | null = null;
@@ -79,7 +83,7 @@ const mapStrictQuestionToQuizQuestion = (q: StrictQuizQuestion, isDarija: boolea
 const _generateQuizInternal = async (prompt: string, isDarija: boolean): Promise<QuizQuestion[]> => {
   try {
     const response = await getAi().models.generateContent({
-      model: "gemini-2.5-flash",
+      model: TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -222,7 +226,7 @@ export const createChatSession = (sourceLang: Language, targetLang: Language): C
     : getStandardChatSystemInstruction(sourceLang, targetLang);
 
   const chat = getAi().chats.create({
-    model: 'gemini-2.5-pro',
+    model: TEXT_MODEL,
     config: {
       systemInstruction: systemInstruction,
       temperature: 0.7,
@@ -282,7 +286,7 @@ export const generateCulturalNuggets = async (targetLang: Language): Promise<Cul
   const prompt = getNuggetsPrompt(targetLang);
   try {
     const response = await getAi().models.generateContent({
-      model: "gemini-2.5-flash",
+      model: TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -370,7 +374,7 @@ export const generateSkillTree = async (sourceLang: Language, targetLang: Langua
 
   try {
     const response = await getAi().models.generateContent({
-      model: "gemini-2.5-flash",
+      model: TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -430,7 +434,7 @@ ${JSON.stringify(stringsToTranslate, null, 2)}
 
   try {
     const response = await getAi().models.generateContent({
-      model: "gemini-2.5-flash",
+      model: TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -594,7 +598,7 @@ export const generateSagaMap = async (
 
   try {
     const response = await getAi().models.generateContent({
-      model: "gemini-2.5-flash",
+      model: TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -763,7 +767,7 @@ Topics: ${node.topics?.join(', ') || 'General Adventure'}.
 
   try {
     const response = await getAi().models.generateContent({
-      model: "gemini-2.5-flash",
+      model: TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -834,7 +838,7 @@ Output JSON array format:
 
   try {
     const response = await getAi().models.generateContent({
-      model: "gemini-2.5-flash",
+      model: TEXT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",

@@ -31,7 +31,9 @@ export const ImmersionProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
             // Check cache (Version 5 to force refresh for English UI)
             const cacheKey = `immersion-native-${sourceLang.code}-v5`;
-            const cached = sessionStorage.getItem(cacheKey);
+            // localStorage (not sessionStorage) so the paid translation call
+            // happens once per device, not once per browser session.
+            const cached = localStorage.getItem(cacheKey);
             if (cached) {
                 setNativeTranslations(JSON.parse(cached));
                 return;
@@ -53,7 +55,7 @@ export const ImmersionProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 );
 
                 setNativeTranslations(translations);
-                sessionStorage.setItem(cacheKey, JSON.stringify(translations));
+                localStorage.setItem(cacheKey, JSON.stringify(translations));
             } catch (err) {
                 console.error("Failed to translate immersion strings:", err);
             }

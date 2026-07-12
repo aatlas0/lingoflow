@@ -19,7 +19,54 @@ const getAi = (): GoogleGenAI => {
   return _ai;
 };
 
-// Audio decoding functions
+// --- Browser speech synthesis (free) ---
+
+// Chrome loads voices asynchronously; the first getVoices() call can be empty.
+const loadVoices = (): Promise<SpeechSynthesisVoice[]> =>
+  new Promise(resolve => {
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      resolve(voices);
+      return;
+    }
+    const timer = setTimeout(() => resolve(window.speechSynthesis.getVoices()), 1500);
+    window.speechSynthesis.onvoiceschanged = () => {
+      clearTimeout(timer);
+      resolve(window.speechSynthesis.getVoices());
+    };
+  });
+
+const playWithBrowser = async (text: string, langCode?: string): Promise<void> => {
+  if (!('speechSynthesis' in window)) {
+    throw new Error("Speech is not supported in this browser.");
+  }
+
+  const voices = await loadVoices();
+  const voice = langCode
+    ? voices.find(v => v.lang.toLowerCase().startsWith(langCode.toLowerCase())) ?? null
+    : null;
+  if (langCode && !voice) {
+    throw new Error("No voice available for this language on your device.");
+  }
+
+  return new Promise((resolve, reject) => {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    if (langCode) utterance.lang = langCode;
+    if (voice) utterance.voice = voice;
+    utterance.rate = 0.9; // slightly slower for learners
+    utterance.onend = () => resolve();
+    utterance.onerror = (e) => {
+      // Cancellation (user clicked another speaker) isn't a failure.
+      if (e.error === 'canceled' || e.error === 'interrupted') resolve();
+      else reject(new Error("Could not play audio."));
+    };
+    window.speechSynthesis.speak(utterance);
+  });
+};
+
+// --- Gemini TTS (paid) — Darija only, since browsers ship no Darija voice ---
+
 function decode(base64: string): Uint8Array {
   const binaryString = atob(base64);
   const len = binaryString.length;
@@ -49,7 +96,6 @@ async function decodeAudioData(
   return buffer;
 }
 
-
 let audioContext: AudioContext | null = null;
 
 const getAudioContext = (): AudioContext => {
@@ -59,40 +105,48 @@ const getAudioContext = (): AudioContext => {
   return audioContext;
 };
 
-export const playTextAsSpeech = async (text: string): Promise<void> => {
-  if (!text) return;
-  
-  try {
-    const response = await getAi().models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: text }] }],
-      config: {
-        responseModalities: [Modality.AUDIO],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Kore' }, // A pleasant, neutral voice
-          },
+const playWithGemini = async (text: string): Promise<void> => {
+  const response = await getAi().models.generateContent({
+    model: "gemini-3.1-flash-tts-preview",
+    contents: [{ parts: [{ text: text }] }],
+    config: {
+      responseModalities: [Modality.AUDIO],
+      speechConfig: {
+        voiceConfig: {
+          prebuiltVoiceConfig: { voiceName: 'Kore' }, // A pleasant, neutral voice
         },
       },
-    });
-    
-    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    if (base64Audio) {
-      const ctx = getAudioContext();
-      if (ctx.state === 'suspended') {
-        await ctx.resume();
-      }
-      
-      const audioBytes = decode(base64Audio);
-      const audioBuffer = await decodeAudioData(audioBytes, ctx, 24000, 1);
-      
-      const source = ctx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(ctx.destination);
-      source.start();
+    },
+  });
+
+  const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  if (base64Audio) {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+
+    const audioBytes = decode(base64Audio);
+    const audioBuffer = await decodeAudioData(audioBytes, ctx, 24000, 1);
+
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(ctx.destination);
+    source.start();
+  }
+};
+
+export const playTextAsSpeech = async (text: string, langCode?: string): Promise<void> => {
+  if (!text) return;
+
+  try {
+    if (langCode === 'ary') {
+      await playWithGemini(text);
+    } else {
+      await playWithBrowser(text, langCode);
     }
   } catch (error) {
     console.error("Error generating or playing speech:", error);
-    throw new Error("Could not play audio.");
+    throw error instanceof Error ? error : new Error("Could not play audio.");
   }
 };

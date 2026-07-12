@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { playTextAsSpeech } from '../../services/ttsService';
 import { useLocalization } from '../../contexts/LocalizationContext';
+import { useAppContext } from '../../contexts/AppContext';
 
 interface SpeakerIconProps {
   textToSpeak: string;
+  /** BCP-47 / ISO language code; defaults to the current target language. */
+  lang?: string;
 }
 
-export const SpeakerIcon: React.FC<SpeakerIconProps> = ({ textToSpeak }) => {
+export const SpeakerIcon: React.FC<SpeakerIconProps> = ({ textToSpeak, lang }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { t } = useLocalization();
+  const { targetLang } = useAppContext();
 
   const handlePlay = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card clicks when clicking icon
@@ -18,7 +22,7 @@ export const SpeakerIcon: React.FC<SpeakerIconProps> = ({ textToSpeak }) => {
     setIsPlaying(true);
     setError(null);
     try {
-      await playTextAsSpeech(textToSpeak);
+      await playTextAsSpeech(textToSpeak, lang ?? targetLang.code);
     } catch (err) {
       setError('Audio failed');
       console.error(err);
