@@ -237,7 +237,7 @@ export const ChatView: React.FC = () => {
         }
         setChatSession(null);
         setHistory([]);
-        setView('map');
+        setView('sagaMap');
     };
 
     const handlePracticeMistakes = async () => {

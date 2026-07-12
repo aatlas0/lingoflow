@@ -4,6 +4,7 @@ import { useImmersion } from '../contexts/ImmersionContext';
 import { generateSagaMap, generateQuizFromTopics } from '../services/geminiService';
 import type { MapNode, SagaMap } from '../types';
 import { CityEpisodeView } from './CityEpisodeView';
+import { effectiveStreak } from '../utils/streak';
 
 // --- Hero's Journal Component ---
 const HeroJournal: React.FC<{ map: SagaMap; profile: any }> = ({ map, profile }) => {
@@ -78,7 +79,7 @@ const HeroJournal: React.FC<{ map: SagaMap; profile: any }> = ({ map, profile })
                 <div className="grid grid-cols-2 gap-3">
                     <div className={`p-3 rounded-xl border text-center ${isHighContrast ? 'bg-slate-800 border-slate-700' : 'bg-white/60 border-teal-900/10'}`}>
                         <div className="text-xl mb-1">🔥</div>
-                        <div className={`text-xl font-bold ${isHighContrast ? 'text-white' : 'text-slate-900'}`}>{profile.streak}</div>
+                        <div className={`text-xl font-bold ${isHighContrast ? 'text-white' : 'text-slate-900'}`}>{effectiveStreak(profile)}</div>
                         <div className={`text-[10px] opacity-70 uppercase font-bold ${isHighContrast ? 'text-teal-300' : 'text-teal-900'}`}>{t('lbl_streak')}</div>
                     </div>
                     <div className={`p-3 rounded-xl border text-center ${isHighContrast ? 'bg-slate-800 border-slate-700' : 'bg-white/60 border-teal-900/10'}`}>

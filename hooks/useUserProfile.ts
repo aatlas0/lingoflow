@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import type { UserProfile, Achievement, Mistake } from '../types';
 import { XP_PER_LEVEL, ACHIEVEMENTS } from '../constants/achievements';
+import { advanceStreak, STREAK_ACHIEVEMENTS } from '../utils/streak';
 
 const initialProfile: UserProfile = {
   level: 1,
@@ -10,10 +11,13 @@ const initialProfile: UserProfile = {
   highScore: 0,
   quizzesCompleted: 0,
   streak: 0,
+  lastActiveDate: null,
   immersionScore: 0,
   unlockedAchievements: [],
   mistakes: [],
   completedSubLessons: [],
+  sourceLangCode: null,
+  targetLangCode: null,
 };
 
 export const useUserProfile = () => {
@@ -36,10 +40,28 @@ export const useUserProfile = () => {
         newAchievements.push('level_5');
       }
 
+      // Streak: any XP-earning action counts as today's activity.
+      const streakUpdate = advanceStreak(prevProfile);
+      const streak = streakUpdate?.streak ?? prevProfile.streak;
+      const lastActiveDate = streakUpdate?.lastActiveDate ?? prevProfile.lastActiveDate;
+      if (streakUpdate) {
+        for (const [id, threshold] of STREAK_ACHIEVEMENTS) {
+          if (
+            streak >= threshold &&
+            !prevProfile.unlockedAchievements.includes(id) &&
+            !newAchievements.includes(id)
+          ) {
+            newAchievements.push(id);
+          }
+        }
+      }
+
       return {
         ...prevProfile,
         xp: newXp,
         level: newLevel,
+        streak,
+        lastActiveDate,
         unlockedAchievements: [...prevProfile.unlockedAchievements, ...newAchievements],
       };
     });

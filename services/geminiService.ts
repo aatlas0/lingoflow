@@ -694,6 +694,54 @@ export const generateQuizFromTopics = async (
 
   return _generateQuizInternal(prompt, isDarija);
 };
+
+export const generateMistakeReviewQuiz = async (
+  mistakes: Mistake[],
+  sourceLang: Language,
+  targetLang: Language
+): Promise<QuizQuestion[]> => {
+  const isDarija = targetLang.code === 'ary';
+  const mistakeList = mistakes
+    .slice(0, 15)
+    .map(m => `- Learner said: "${m.original}" → Correct form: "${m.correction}" (${m.explanation})`)
+    .join('\n');
+
+  const prompt = `
+    You are building a personalized remediation quiz for a ${sourceLang.name} speaker learning ${targetLang.name}.
+    Below are real mistakes this learner made recently. Create 5 multiple-choice questions
+    that each target the underlying rule or vocabulary behind one of these mistakes.
+    Test the corrected forms in NEW sentences and contexts — do not repeat the original sentences verbatim.
+    Prioritize the most recent and most instructive mistakes.
+
+    Learner's past mistakes:
+    ${mistakeList}
+
+    ${getStrictRules(sourceLang, targetLang, isDarija)}
+  `;
+
+  return _generateQuizInternal(prompt, isDarija);
+};
+
+export const generatePlacementQuiz = async (
+  sourceLang: Language,
+  targetLang: Language
+): Promise<QuizQuestion[]> => {
+  const isDarija = targetLang.code === 'ary';
+  const prompt = `
+    Create a 10-question placement test for a ${sourceLang.name} speaker learning ${targetLang.name}.
+    The difficulty MUST ramp steadily:
+    - Questions 1-2: absolute beginner (A1) — basic greetings, simple vocabulary.
+    - Questions 3-4: elementary (A2) — everyday phrases, simple present tense.
+    - Questions 5-6: intermediate (B1) — past/future tenses, common idioms.
+    - Questions 7-8: upper-intermediate (B2) — nuanced word choice, complex grammar.
+    - Questions 9-10: advanced (C1) — subtle distinctions, formal register, rare vocabulary.
+    Exactly 10 questions, each with 4 choices.
+
+    ${getStrictRules(sourceLang, targetLang, isDarija)}
+  `;
+
+  return _generateQuizInternal(prompt, isDarija);
+};
 // Episode Generation
 
 

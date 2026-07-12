@@ -39,4 +39,28 @@ export const ACHIEVEMENTS: Record<string, Achievement> = {
     description: 'Learn Moroccan Darija.',
     icon: '🇲🇦',
   },
+  streak_3: {
+    id: 'streak_3',
+    name: 'On Fire',
+    description: 'Reach a 3-day streak.',
+    icon: '🔥',
+  },
+  streak_7: {
+    id: 'streak_7',
+    name: 'Week of Flames',
+    description: 'Reach a 7-day streak.',
+    icon: '🏮',
+  },
+  streak_30: {
+    id: 'streak_30',
+    name: 'Unstoppable',
+    description: 'Reach a 30-day streak.',
+    icon: '🌋',
+  },
+  placement_complete: {
+    id: 'placement_complete',
+    name: 'Found Your Level',
+    description: 'Complete the placement test.',
+    icon: '🎯',
+  },
 };

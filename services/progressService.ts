@@ -22,15 +22,18 @@ export const fetchProfile = async (userId: string): Promise<UserProfile | null> 
     highScore: data.high_score,
     quizzesCompleted: data.quizzes_completed,
     streak: data.streak,
+    lastActiveDate: data.last_active_date ?? null,
     immersionScore: data.immersion_score,
     unlockedAchievements: data.unlocked_achievements ?? [],
     mistakes: data.mistakes ?? [],
     completedSubLessons: data.completed_sub_lessons ?? [],
+    sourceLangCode: data.source_lang ?? null,
+    targetLangCode: data.target_lang ?? null,
   };
 };
 
 export const saveProfile = async (userId: string, username: string | null, profile: UserProfile): Promise<void> => {
-  const { error } = await getSupabase().from('profiles').upsert({
+  const basePayload = {
     user_id: userId,
     username,
     level: profile.level,
@@ -43,7 +46,22 @@ export const saveProfile = async (userId: string, username: string | null, profi
     mistakes: profile.mistakes,
     completed_sub_lessons: profile.completedSubLessons,
     updated_at: new Date().toISOString(),
+  };
+
+  let { error } = await getSupabase().from('profiles').upsert({
+    ...basePayload,
+    last_active_date: profile.lastActiveDate,
+    source_lang: profile.sourceLangCode,
+    target_lang: profile.targetLangCode,
   });
+
+  // Older databases don't have the newer columns yet — save what we can.
+  if (error && /column|schema cache/i.test(error.message)) {
+    console.warn(
+      'profiles table is missing newer columns; run supabase/migrations/20260712_streak_and_langs.sql. Saving legacy fields only.'
+    );
+    ({ error } = await getSupabase().from('profiles').upsert(basePayload));
+  }
 
   if (error) console.error('Failed to save profile:', error.message);
 };

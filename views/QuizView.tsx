@@ -61,7 +61,6 @@ export const QuizView = () => {
         unlockAchievement,
         setError,
         updateQuestProgress,
-        triggerWinConfetti,
         customQuiz,
         setCustomQuiz,
         setView,
@@ -138,7 +137,7 @@ export const QuizView = () => {
                 }
             }, 100);
         }
-    }, [quizState, userAnswers, questions.length, addXp, updateQuestProgress, triggerWinConfetti]);
+    }, [quizState, userAnswers, questions.length, addXp, updateQuestProgress]);
 
     // Overdrive State
     const [isOverdriveActive, setIsOverdriveActive] = useState(false);

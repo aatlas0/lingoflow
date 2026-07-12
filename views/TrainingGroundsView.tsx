@@ -9,56 +9,65 @@ import { LoadingSpinner } from '../components/common/LoadingSpinner';
 export const TrainingGroundsView: React.FC = () => {
     const {
         sourceLang, targetLang, profile, isHighContrast,
-        setView, setError, setCurrentSubLesson, setCustomQuiz
+        setView, setError, setCurrentSubLesson, setCustomQuiz,
+        skillTree, setSkillTree, isHydrating
     } = useAppContext();
 
     const { t } = useLocalization();
-    const [skillTree, setSkillTree] = useState<SkillTree | null>(null);
     const [categories, setCategories] = useState<TrainingCategory[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const isLoading = isHydrating || isGenerating;
 
-    // Load Skill Tree and organize into categories
+    // The skill tree lives in AppContext (synced to the account, per target
+    // language). Only generate one when the account has none yet.
     useEffect(() => {
-        const loadTrainingData = async () => {
-            setIsLoading(true);
+        if (isHydrating || skillTree) return;
+        let cancelled = false;
+        (async () => {
+            setIsGenerating(true);
             try {
                 const tree = await generateSkillTree(sourceLang, targetLang, profile.level);
-                setSkillTree(tree);
-
-                // Transform skill branches into training categories
-                const cats: TrainingCategory[] = tree.skill_tree.map((branch, index) => {
-                    const icon = getCategoryIcon(branch.branch);
-                    const completedCount = branch.nodes.filter(n =>
-                        n.state === 'inked' || n.state === 'anchored'
-                    ).length;
-                    const progress = (completedCount / branch.nodes.length) * 100;
-
-                    // First category is always unlocked (in_progress) if not mastered
-                    const status = progress === 100 ? 'mastered' :
-                        (progress > 0 || index === 0) ? 'in_progress' : 'locked';
-
-                    return {
-                        id: branch.branch,
-                        name: branch.branch,
-                        icon,
-                        description: `Master ${branch.branch.toLowerCase()} skills`,
-                        progress,
-                        subLessons: [], // Will be loaded when category is selected
-                        status
-                    };
-                });
-
-                setCategories(cats);
+                if (!cancelled) setSkillTree(tree);
             } catch (error) {
                 console.error('Failed to load training data:', error);
-                setError('Failed to load Training Grounds');
+                if (!cancelled) setError('Failed to load Training Grounds');
             } finally {
-                setIsLoading(false);
+                if (!cancelled) setIsGenerating(false);
             }
-        };
+        })();
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isHydrating, skillTree, sourceLang, targetLang, profile.level]);
 
-        loadTrainingData();
-    }, [sourceLang, targetLang, profile.level]);
+    // Organize the tree into training categories whenever it changes
+    useEffect(() => {
+        if (!skillTree) {
+            setCategories([]);
+            return;
+        }
+        const cats: TrainingCategory[] = skillTree.skill_tree.map((branch, index) => {
+            const icon = getCategoryIcon(branch.branch);
+            const completedCount = branch.nodes.filter(n =>
+                n.state === 'inked' || n.state === 'anchored'
+            ).length;
+            const progress = (completedCount / branch.nodes.length) * 100;
+
+            // First category is always unlocked (in_progress) if not mastered
+            const status = progress === 100 ? 'mastered' :
+                (progress > 0 || index === 0) ? 'in_progress' : 'locked';
+
+            return {
+                id: branch.branch,
+                name: branch.branch,
+                icon,
+                description: `Master ${branch.branch.toLowerCase()} skills`,
+                progress,
+                subLessons: [], // Will be loaded when category is selected
+                status
+            };
+        });
+        setCategories(cats);
+    }, [skillTree]);
 
     const getCategoryIcon = (branchName: string): string => {
         const icons: Record<string, string> = {
@@ -130,7 +139,7 @@ export const TrainingGroundsView: React.FC = () => {
         // We rely on the UI to only trigger this for unlocked lessons
         // subLesson.status might be stale (e.g. 'locked' even if unlocked via completion)
 
-        setIsLoading(true);
+        setIsGenerating(true);
         try {
             console.log(`Generating contextual quiz for: ${subLesson.title}`);
             const quiz = await generateQuizFromTopics(subLesson.topics || [subLesson.title], sourceLang, targetLang);
@@ -140,7 +149,7 @@ export const TrainingGroundsView: React.FC = () => {
             console.error("Failed to generate contextual quiz:", error);
             setError("Failed to generate quiz. Please try again.");
         } finally {
-            setIsLoading(false);
+            setIsGenerating(false);
         }
     };
 

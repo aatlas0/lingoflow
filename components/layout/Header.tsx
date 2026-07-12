@@ -4,6 +4,7 @@ import { useAppContext } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocalization } from '../../contexts/LocalizationContext';
 import { useImmersion } from '../../contexts/ImmersionContext';
+import { effectiveStreak } from '../../utils/streak';
 
 export const Header = () => {
     const { isHighContrast, toggleHighContrast, profile, currentView, setView } = useAppContext();
@@ -70,6 +71,24 @@ export const Header = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {/* Day streak — always visible so the habit is always on screen */}
+                        {(() => {
+                            const streak = effectiveStreak(profile);
+                            return (
+                                <div
+                                    title={streak > 0 ? `${streak}-day streak — practice daily to keep it!` : 'Practice today to start a streak!'}
+                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-black text-sm select-none
+                                        ${streak > 0
+                                            ? 'bg-orange-500/20 text-orange-400'
+                                            : (isHighContrast ? 'bg-white/5 text-slate-500' : 'bg-black/20 text-desert/60')}
+                                    `}
+                                >
+                                    <span className={streak > 0 ? '' : 'grayscale opacity-60'}>🔥</span>
+                                    <span>{streak}</span>
+                                </div>
+                            );
+                        })()}
+
                         {showLanguageToggle && (
                             <button
                                 onClick={() => setForceNative(!forceNative)}

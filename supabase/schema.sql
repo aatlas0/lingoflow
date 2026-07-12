@@ -12,10 +12,13 @@ create table if not exists public.profiles (
   high_score int not null default 0,
   quizzes_completed int not null default 0,
   streak int not null default 0,
+  last_active_date text, -- local 'YYYY-MM-DD' of the last day with activity
   immersion_score int not null default 0,
   unlocked_achievements jsonb not null default '[]'::jsonb,
   mistakes jsonb not null default '[]'::jsonb,
   completed_sub_lessons jsonb not null default '[]'::jsonb,
+  source_lang text, -- persisted language pair
+  target_lang text,
   updated_at timestamptz not null default now()
 );
 

@@ -46,10 +46,13 @@ export interface UserProfile {
   highScore: number;
   quizzesCompleted: number;
   streak: number;
+  lastActiveDate: string | null; // local 'YYYY-MM-DD' of the last day with activity
   immersionScore: number; // 0-100
   unlockedAchievements: string[];
   mistakes: Mistake[];
   completedSubLessons: string[]; // Array of SubLesson IDs
+  sourceLangCode: string | null; // persisted language pair
+  targetLangCode: string | null;
 }
 
 export interface CulturalNugget {
@@ -114,7 +117,7 @@ export interface TrainingCategory {
 }
 
 
-export type AppView = 'home' | 'dashboard' | 'quiz' | 'lightning' | 'chat' | 'profile' | 'skillTree' | 'sagaMap' | 'training' | 'practiceQuiz' | 'map';
+export type AppView = 'home' | 'dashboard' | 'quiz' | 'lightning' | 'chat' | 'profile' | 'sagaMap' | 'training' | 'practiceQuiz' | 'placement';
 
 export type QuestType = 'quiz_complete' | 'xp_earn' | 'chat_message';
 

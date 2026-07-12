@@ -14,6 +14,7 @@ interface AppContextType {
   setTargetLang: (lang: Language) => void;
   profile: UserProfile;
   updateProfile: (updates: Partial<UserProfile>) => void;
+  isHydrating: boolean;
   addXp: (amount: number) => void;
   completeQuiz: () => void;
   updateHighScore: (score: number) => void;
@@ -42,7 +43,6 @@ interface AppContextType {
   // Skill Tree
   skillTree: SkillTree | null;
   setSkillTree: (tree: SkillTree) => void;
-  updateNodeProgress: (nodeId: string, action: 'practice' | 'anchor') => void;
   // Saga Map
   sagaMap: SagaMap | null;
   setSagaMap: (map: SagaMap) => void;
@@ -55,6 +55,35 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+// Daily quest variants — picked deterministically per calendar day so the
+// quests vary day to day but stay stable within one day.
+const QUEST_VARIANTS: Record<QuestType, { target: number; rewardXP: number; description: string }[]> = {
+  quiz_complete: [
+    { target: 2, rewardXP: 40, description: 'Complete 2 Quizzes' },
+    { target: 3, rewardXP: 50, description: 'Complete 3 Quizzes' },
+    { target: 4, rewardXP: 70, description: 'Complete 4 Quizzes' },
+  ],
+  xp_earn: [
+    { target: 100, rewardXP: 30, description: 'Earn 100 XP' },
+    { target: 150, rewardXP: 40, description: 'Earn 150 XP' },
+    { target: 250, rewardXP: 60, description: 'Earn 250 XP' },
+  ],
+  chat_message: [
+    { target: 5, rewardXP: 20, description: 'Send 5 messages to your AI tutor' },
+    { target: 8, rewardXP: 30, description: 'Send 8 messages to your AI tutor' },
+    { target: 12, rewardXP: 45, description: 'Send 12 messages to your AI tutor' },
+  ],
+};
+
+// Remembers the language pair on this device as a fallback for databases
+// that don't have the profile columns yet.
+const persistLangPairLocally = (patch: { source?: string; target?: string }) => {
+  try {
+    const current = JSON.parse(localStorage.getItem('langPair') || '{}');
+    localStorage.setItem('langPair', JSON.stringify({ ...current, ...patch }));
+  } catch { /* storage unavailable — non-fatal */ }
+};
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [sourceLang, setSourceLangState] = useState<Language>(LANGUAGES[0]); // Default to English
@@ -124,14 +153,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // --- Supabase progress sync ---
   const { user, username } = useAuth();
   const isHydratedRef = useRef(false);
+  const [isHydrating, setIsHydrating] = useState(false);
+  // Language-pair restore must run once per login, NOT on every language
+  // switch — otherwise a not-yet-saved switch would be yanked back.
+  const restoredLangForUserRef = useRef<string | null>(null);
 
   // Hydrate from the server on login (and re-fetch language state on language switch).
   useEffect(() => {
     isHydratedRef.current = false; // block saves while (re)hydrating
     if (!user) {
+      setIsHydrating(false);
       return;
     }
     let cancelled = false;
+    setIsHydrating(true);
     (async () => {
       const [serverProfile, langState] = await Promise.all([
         fetchProfile(user.id),
@@ -141,13 +176,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       if (serverProfile) {
         updateProfile(serverProfile);
+        // Synced progress isn't a "level up" — don't fire the celebration modal.
+        previousLevelRef.current = Math.max(previousLevelRef.current, serverProfile.level);
       } else {
         // First login: create the row so the account always has a profile.
         await saveProfile(user.id, username, profile);
       }
+
+      // Restore the saved language pair (server first, device fallback).
+      if (restoredLangForUserRef.current !== user.id) {
+        restoredLangForUserRef.current = user.id;
+        let sourceCode = serverProfile?.sourceLangCode ?? undefined;
+        let targetCode = serverProfile?.targetLangCode ?? undefined;
+        if (!targetCode) {
+          try {
+            const local = JSON.parse(localStorage.getItem('langPair') || 'null');
+            sourceCode = sourceCode ?? local?.source;
+            targetCode = local?.target;
+          } catch { /* ignore */ }
+        }
+        const source = LANGUAGES.find(l => l.code === sourceCode);
+        const target = LANGUAGES.find(l => l.code === targetCode);
+        if (source) setSourceLangState(source);
+        if (target && currentView === 'home') setView('dashboard'); // returning users skip the picker
+        if (target && target.code !== targetLang.code) {
+          // Switching re-runs this effect, which hydrates the right language.
+          setTargetLangState(target);
+          return;
+        }
+      }
+
       setSkillTreeState(langState.skillTree);
       setSagaMapState(langState.sagaMap);
       isHydratedRef.current = true;
+      setIsHydrating(false);
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -207,10 +269,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   }, []);
 
-  const updateNodeProgress = useCallback((nodeId: string, action: 'practice' | 'anchor') => {
-    // Disabled for now
-  }, []);
-
   useEffect(() => {
     if (profile.level > previousLevelRef.current) {
       setNewLevel(profile.level);
@@ -267,35 +325,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [dailyQuests]);
 
   const generateDailyQuests = useCallback(() => {
-    const newQuests: Quest[] = [
-      {
-        id: 'q1',
-        type: 'quiz_complete',
-        description: 'Complete 3 Quizzes',
-        target: 3,
+    // Seed a small PRNG with today's date so everyone gets the same rotation
+    // for the day, but tomorrow's quests are different.
+    const dayKey = new Date().toDateString();
+    let seed = 0;
+    for (let i = 0; i < dayKey.length; i++) seed = (seed * 31 + dayKey.charCodeAt(i)) | 0;
+    const rand = () => { // mulberry32
+      seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+
+    const types: QuestType[] = ['quiz_complete', 'xp_earn', 'chat_message'];
+    const newQuests: Quest[] = types.map((type, i) => {
+      const variants = QUEST_VARIANTS[type];
+      const variant = variants[Math.floor(rand() * variants.length)];
+      return {
+        id: `q${i + 1}`,
+        type,
+        description: variant.description,
+        target: variant.target,
         progress: 0,
-        rewardXP: 50,
-        isClaimed: false
-      },
-      {
-        id: 'q2',
-        type: 'xp_earn',
-        description: 'Earn 100 XP',
-        target: 100,
-        progress: 0,
-        rewardXP: 30,
-        isClaimed: false
-      },
-      {
-        id: 'q3',
-        type: 'chat_message',
-        description: 'Send 5 Chat Messages',
-        target: 5,
-        progress: 0,
-        rewardXP: 20,
-        isClaimed: false
-      }
-    ];
+        rewardXP: variant.rewardXP,
+        isClaimed: false,
+      };
+    });
     setDailyQuests(newQuests);
   }, []);
 
@@ -337,22 +392,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     newAchievements.forEach(showAchievementToast);
   }, [rawUnlockAchievement, showAchievementToast]);
 
+  const setSourceLang = useCallback((lang: Language) => {
+    setSourceLangState(lang);
+    updateProfile({ sourceLangCode: lang.code });
+    persistLangPairLocally({ source: lang.code });
+  }, [updateProfile]);
+
   const setTargetLang = useCallback((lang: Language) => {
     setTargetLangState(lang);
+    updateProfile({ targetLangCode: lang.code });
+    persistLangPairLocally({ target: lang.code });
     if (lang.code === 'ary') {
       unlockAchievement('darija_explorer');
     }
-  }, [unlockAchievement]);
+  }, [unlockAchievement, updateProfile]);
 
 
 
   const value = React.useMemo(() => ({
     sourceLang,
     targetLang,
-    setSourceLang: setSourceLangState,
+    setSourceLang,
     setTargetLang,
     profile,
     updateProfile,
+    isHydrating,
     addXp,
     completeQuiz,
     updateHighScore,
@@ -377,7 +441,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setCurrentSubLesson,
     skillTree,
     setSkillTree,
-    updateNodeProgress,
     sagaMap,
     setSagaMap,
     completeNode,
@@ -388,9 +451,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }), [
     sourceLang,
     targetLang,
+    setSourceLang,
     setTargetLang,
     profile,
     updateProfile,
+    isHydrating,
     addXp,
     completeQuiz,
     updateHighScore,
@@ -411,7 +476,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     currentSubLesson,
     skillTree,
     setSkillTree,
-    updateNodeProgress,
     sagaMap,
     setSagaMap,
     completeNode,

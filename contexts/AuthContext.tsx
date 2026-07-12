@@ -11,7 +11,7 @@ const usernameToEmail = (username: string) => `${username.trim().toLowerCase()}@
 
 // Local progress is device-scoped; wipe it on identity changes so one
 // account's progress never leaks into another account on the same device.
-const LOCAL_PROGRESS_KEYS = ['userProfile', 'skillTree', 'sagaMap', 'dailyQuests', 'dailyQuestsDate'];
+const LOCAL_PROGRESS_KEYS = ['userProfile', 'skillTree', 'sagaMap', 'dailyQuests', 'dailyQuestsDate', 'langPair', 'placementDismissed'];
 const clearLocalProgress = () => {
   LOCAL_PROGRESS_KEYS.forEach(key => localStorage.removeItem(key));
 };

@@ -1,19 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import { useLocalization } from '../contexts/LocalizationContext';
-import type { AppView } from '../types';
 import { DailyQuestsCard } from '../components/common/DailyQuestsCard';
+import { generateMistakeReviewQuiz } from '../services/geminiService';
 
 interface MenuCardProps {
     title: string;
     description: string;
     icon: string;
-    view: AppView;
-    onClick: (view: AppView) => void;
+    onClick: () => void;
+    disabled?: boolean;
+    isBusy?: boolean;
     variant?: 'primary' | 'secondary';
 }
 
-const MenuCard: React.FC<MenuCardProps> = ({ title, description, icon, view, onClick, variant = 'primary' }) => {
+const MenuCard: React.FC<MenuCardProps> = ({ title, description, icon, onClick, disabled = false, isBusy = false, variant = 'primary' }) => {
     const { isHighContrast } = useAppContext();
 
     // Determine base background based on high contrast mode
@@ -23,9 +24,11 @@ const MenuCard: React.FC<MenuCardProps> = ({ title, description, icon, view, onC
 
     return (
         <button
-            onClick={() => onClick(view)}
+            onClick={onClick}
+            disabled={disabled || isBusy}
             className={`
-                group relative rounded-2xl border-2 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-turquoise hover:z-10
+                group relative rounded-2xl border-2 shadow-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-turquoise hover:z-10
+                ${disabled ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:-translate-y-1 hover:shadow-xl'}
                 ${bgClass} backdrop-blur-sm
                 flex flex-col items-center justify-center text-center p-4 h-full
                 md:flex-row md:text-left md:justify-start md:p-4
@@ -40,7 +43,7 @@ const MenuCard: React.FC<MenuCardProps> = ({ title, description, icon, view, onC
                     ? 'bg-slate-800 border-slate-600 text-white'
                     : 'bg-dark-green border-desert text-white'}
             `}>
-                {icon}
+                {isBusy ? <span className="animate-spin">⏳</span> : icon}
             </div>
 
             {/* Text Container */}
@@ -68,9 +71,87 @@ const MenuCard: React.FC<MenuCardProps> = ({ title, description, icon, view, onC
     );
 };
 
+// One-time invitation to calibrate the starting level for brand-new accounts.
+const PlacementBanner: React.FC = () => {
+    const { profile, setView, isHighContrast } = useAppContext();
+    const [dismissed, setDismissed] = useState<boolean>(() => {
+        try { return localStorage.getItem('placementDismissed') === 'true'; } catch { return false; }
+    });
+
+    const isNewUser = profile.xp === 0
+        && profile.quizzesCompleted === 0
+        && !profile.unlockedAchievements.includes('placement_complete');
+
+    if (!isNewUser || dismissed) return null;
+
+    const dismiss = () => {
+        setDismissed(true);
+        try { localStorage.setItem('placementDismissed', 'true'); } catch { /* ignore */ }
+    };
+
+    return (
+        <div className={`relative flex flex-col sm:flex-row items-center gap-3 rounded-2xl border-2 p-4 mb-3 shadow-lg animate-fade-in
+            ${isHighContrast
+                ? 'bg-gradient-to-r from-teal-900/80 to-slate-800/80 border-brand-turquoise/50'
+                : 'bg-gradient-to-r from-brand-turquoise/20 to-gold/20 border-brand-turquoise/40 backdrop-blur-sm'}
+        `}>
+            <span className="text-3xl shrink-0">🎯</span>
+            <div className="flex-grow text-center sm:text-left">
+                <p className={`font-bold ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
+                    New here? Find your level.
+                </p>
+                <p className={`text-sm ${isHighContrast ? 'text-slate-300' : 'text-dark-green/70'}`}>
+                    A 10-question placement test sets your starting point — no more too-easy lessons.
+                </p>
+            </div>
+            <button
+                onClick={() => setView('placement')}
+                className="shrink-0 px-4 py-2 rounded-lg font-bold bg-brand-turquoise text-white shadow hover:shadow-lg hover:-translate-y-0.5 transition-all"
+            >
+                Start test
+            </button>
+            <button
+                onClick={dismiss}
+                title="Dismiss"
+                className={`absolute top-2 right-2 sm:static sm:ml-1 p-1.5 rounded-full text-sm transition-colors
+                    ${isHighContrast ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-dark-green/50 hover:text-dark-green hover:bg-black/5'}
+                `}
+            >
+                ✕
+            </button>
+        </div>
+    );
+};
+
 export const DashboardView = () => {
-    const { setView, isHighContrast } = useAppContext();
+    const {
+        setView, isHighContrast, profile,
+        sourceLang, targetLang, setCustomQuiz, setError,
+    } = useAppContext();
     const { t } = useLocalization();
+    const [isBuildingReview, setIsBuildingReview] = useState(false);
+
+    const mistakeCount = profile.mistakes?.length ?? 0;
+
+    const openQuiz = () => {
+        setCustomQuiz(null); // never serve a stale topic/review quiz here
+        setView('quiz');
+    };
+
+    const openMistakeReview = async () => {
+        if (isBuildingReview || mistakeCount === 0) return;
+        setIsBuildingReview(true);
+        try {
+            const quiz = await generateMistakeReviewQuiz(profile.mistakes, sourceLang, targetLang);
+            setCustomQuiz(quiz);
+            setView('quiz');
+        } catch (error) {
+            console.error('Failed to build mistake review:', error);
+            setError('Could not build your review quiz. Please try again.');
+        } finally {
+            setIsBuildingReview(false);
+        }
+    };
 
     return (
         <div className="flex flex-col h-full w-full max-w-7xl mx-auto px-4 py-2 md:py-4 animate-fade-in">
@@ -88,6 +169,8 @@ export const DashboardView = () => {
                     {t('dashboard.changeLanguage')}
                 </button>
             </div>
+
+            <PlacementBanner />
 
             {/* Main Grid Layout */}
             <div className="flex-grow grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 overflow-y-auto p-2 pb-20 md:pb-2">
@@ -114,48 +197,53 @@ export const DashboardView = () => {
                         title={t('dashboard.quiz.title')}
                         description={t('dashboard.quiz.desc')}
                         icon="🧠"
-                        view="quiz"
-                        onClick={setView}
+                        onClick={openQuiz}
                     />
 
                     <MenuCard
                         title={t('dashboard.lightning.title')}
                         description={t('dashboard.lightning.desc')}
                         icon="⚡️"
-                        view="lightning"
-                        onClick={setView}
+                        onClick={() => setView('lightning')}
                     />
 
                     <MenuCard
                         title={t('dashboard.chat.title')}
                         description={t('dashboard.chat.desc')}
                         icon="💬"
-                        view="chat"
-                        onClick={setView}
+                        onClick={() => setView('chat')}
                     />
 
                     <MenuCard
                         title="Training Grounds"
                         description="Master the basics with structured lessons."
                         icon="⚔️"
-                        view="training"
-                        onClick={setView}
+                        onClick={() => setView('training')}
                     />
 
                     <MenuCard
                         title="Saga Map"
                         description="Embark on your journey along the Silk Road."
                         icon="🗺️"
-                        view="sagaMap"
-                        onClick={setView}
+                        onClick={() => setView('sagaMap')}
+                    />
+
+                    <MenuCard
+                        title="Review Mistakes"
+                        description={mistakeCount > 0
+                            ? `Turn your ${mistakeCount} logged mistake${mistakeCount === 1 ? '' : 's'} into a personalized quiz.`
+                            : 'Chat with your tutor first — your corrected mistakes appear here.'}
+                        icon="🩹"
+                        onClick={openMistakeReview}
+                        disabled={mistakeCount === 0}
+                        isBusy={isBuildingReview}
                     />
 
                     <MenuCard
                         title={t('dashboard.profile.title')}
                         description={t('dashboard.profile.desc')}
                         icon="👤"
-                        view="profile"
-                        onClick={setView}
+                        onClick={() => setView('profile')}
                     />
                 </div>
             </div>

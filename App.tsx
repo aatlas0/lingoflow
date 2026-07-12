@@ -12,8 +12,8 @@ import { QuizView } from './views/QuizView';
 import { LightningRoundView } from './views/LightningRoundView';
 import { ChatView } from './views/ChatView';
 import { ProfileView } from './views/ProfileView';
-import { SkillTreeView } from './views/SkillTreeView';
 import { SagaMapView } from './views/SagaMapView';
+import { PlacementView } from './views/PlacementView';
 import { TrainingGroundsView } from './views/TrainingGroundsView';
 import { PracticeQuizView } from './views/PracticeQuizView';
 import { Button } from './components/common/Button';
@@ -69,10 +69,9 @@ const AppContent: React.FC = () => {
             case 'lightning': return <LightningRoundView />;
             case 'chat': return <ChatView />;
             case 'profile': return <ProfileView />;
-            case 'skillTree': return <SkillTreeView />;
             case 'sagaMap': return <SagaMapView />;
-            case 'map': return <SagaMapView />;
             case 'training': return <TrainingGroundsView />;
+            case 'placement': return <PlacementView />;
             default: return <HomeView />;
         }
     };
