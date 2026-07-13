@@ -11,20 +11,20 @@ interface SpeakerIconProps {
 
 export const SpeakerIcon: React.FC<SpeakerIconProps> = ({ textToSpeak, lang }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { t } = useLocalization();
-  const { targetLang } = useAppContext();
+  const { targetLang, setError } = useAppContext();
 
   const handlePlay = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card clicks when clicking icon
     if (isPlaying) return;
 
     setIsPlaying(true);
-    setError(null);
     try {
       await playTextAsSpeech(textToSpeak, lang ?? targetLang.code);
     } catch (err) {
-      setError('Audio failed');
+      // Surface the real reason in the app toast — the old inline span was
+      // invisible inside the icon, so failures looked like a dead button.
+      setError(err instanceof Error ? err.message : 'Could not play audio.');
       console.error(err);
     } finally {
       setIsPlaying(false);
@@ -46,7 +46,6 @@ export const SpeakerIcon: React.FC<SpeakerIconProps> = ({ textToSpeak, lang }) =
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 6V4m0 16v-2m4.95-12.95l-1.414 1.414M4.464 19.536l1.414-1.414M19.536 4.464l-1.414 1.414M4.464 4.464l1.414 1.414M21 12h-2M5 12H3m14.05-7.05l-1.414 1.414M7.929 16.071l-1.414 1.414" />
         )}
       </svg>
-      {error && <span className="text-deep-red text-xs">{error}</span>}
     </button>
   );
 };

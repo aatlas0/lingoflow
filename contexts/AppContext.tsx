@@ -362,26 +362,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const dailyQuestsRef = useRef<Quest[]>(dailyQuests);
   useEffect(() => { dailyQuestsRef.current = dailyQuests; }, [dailyQuests]);
 
-  // Load or generate quests on mount
+  // Load or generate quests per account — a global key let two accounts on
+  // the same browser share (and clobber) each other's quest progress.
   useEffect(() => {
-    const savedQuests = localStorage.getItem('dailyQuests');
-    const savedDate = localStorage.getItem('dailyQuestsDate');
+    if (!user) {
+      setDailyQuests([]);
+      return;
+    }
     const today = new Date().toDateString();
+    let savedQuests = localStorage.getItem(`dailyQuests-${user.id}`);
+    let savedDate = localStorage.getItem(`dailyQuestsDate-${user.id}`);
+
+    // One-time adoption of the old global key so today's progress survives.
+    if (!savedQuests) {
+      savedQuests = localStorage.getItem('dailyQuests');
+      savedDate = localStorage.getItem('dailyQuestsDate');
+      localStorage.removeItem('dailyQuests');
+      localStorage.removeItem('dailyQuestsDate');
+    }
 
     if (savedQuests && savedDate === today) {
       setDailyQuests(JSON.parse(savedQuests));
     } else {
       generateDailyQuests();
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Save quests whenever they change
   useEffect(() => {
-    if (dailyQuests.length > 0) {
-      localStorage.setItem('dailyQuests', JSON.stringify(dailyQuests));
-      localStorage.setItem('dailyQuestsDate', new Date().toDateString());
+    if (user && dailyQuests.length > 0) {
+      localStorage.setItem(`dailyQuests-${user.id}`, JSON.stringify(dailyQuests));
+      localStorage.setItem(`dailyQuestsDate-${user.id}`, new Date().toDateString());
     }
-  }, [dailyQuests]);
+  }, [dailyQuests, user]);
 
   const generateDailyQuests = useCallback(() => {
     // Seed a small PRNG with today's date so everyone gets the same rotation

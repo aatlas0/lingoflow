@@ -16,8 +16,8 @@ export const Header = () => {
     // The user requested the menu not appear in the beginning (Home view).
     if (currentView === 'home') return null;
 
-    // Show back button if we are NOT in home or dashboard
-    const showBackButton = currentView !== 'home' && currentView !== 'dashboard';
+    // Show back button if we are NOT on the dashboard (home already returned)
+    const showBackButton = currentView !== 'dashboard';
 
     return (
         <header className={`shadow-lg border-b-4 relative z-10 transition-all duration-300

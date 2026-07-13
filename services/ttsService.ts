@@ -102,20 +102,23 @@ const playWithGemini = async (text: string): Promise<void> => {
   });
 
   const base64Audio = response.parts?.[0]?.inlineData?.data;
-  if (base64Audio) {
-    const ctx = getAudioContext();
-    if (ctx.state === 'suspended') {
-      await ctx.resume();
-    }
-
-    const audioBytes = decode(base64Audio);
-    const audioBuffer = await decodeAudioData(audioBytes, ctx, 24000, 1);
-
-    const source = ctx.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(ctx.destination);
-    source.start();
+  if (!base64Audio) {
+    // Don't fail silently — the speaker button looked dead when this happened.
+    throw new Error("No audio was generated. Please try again.");
   }
+
+  const ctx = getAudioContext();
+  if (ctx.state === 'suspended') {
+    await ctx.resume();
+  }
+
+  const audioBytes = decode(base64Audio);
+  const audioBuffer = await decodeAudioData(audioBytes, ctx, 24000, 1);
+
+  const source = ctx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(ctx.destination);
+  source.start();
 };
 
 export const playTextAsSpeech = async (text: string, langCode?: string): Promise<void> => {

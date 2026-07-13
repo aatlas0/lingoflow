@@ -7,6 +7,7 @@ import { LocalizationProvider, useLocalization } from './contexts/LocalizationCo
 import { Header } from './components/layout/Header';
 import { AnimatedBackground } from './components/layout/AnimatedBackground';
 import { LevelUpModal } from './components/common/LevelUpModal';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 // Each view loads as its own chunk on first visit instead of shipping the
 // whole app in one bundle. AuthView stays static: it's the first paint.
@@ -119,13 +120,17 @@ const AppContent: React.FC = () => {
             */}
             <main className="flex-grow container mx-auto p-0 sm:p-0 lg:p-0 relative flex flex-col overflow-y-auto h-full">
                 <div className="w-full min-h-full flex flex-col">
-                    <React.Suspense fallback={
-                        <div className="flex-grow flex items-center justify-center">
-                            <div className="w-12 h-12 border-4 border-brand-turquoise/30 border-t-brand-turquoise rounded-full animate-spin"></div>
-                        </div>
-                    }>
-                        {renderView()}
-                    </React.Suspense>
+                    {/* key remounts the boundary on navigation so a crash in
+                        one view doesn't keep showing after leaving it */}
+                    <ErrorBoundary key={currentView} onReset={() => setView('dashboard')}>
+                        <React.Suspense fallback={
+                            <div className="flex-grow flex items-center justify-center">
+                                <div className="w-12 h-12 border-4 border-brand-turquoise/30 border-t-brand-turquoise rounded-full animate-spin"></div>
+                            </div>
+                        }>
+                            {renderView()}
+                        </React.Suspense>
+                    </ErrorBoundary>
                 </div>
             </main>
             <ErrorDisplay />

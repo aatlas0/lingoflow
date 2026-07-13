@@ -5,6 +5,7 @@ import { LANGUAGES, flagOf } from '../constants/languages';
 import { fetchAllLanguageProgress, extractProgress, FRESH_LANGUAGE_PROGRESS } from '../services/progressService';
 import { XP_PER_LEVEL } from '../constants/achievements';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { useModalA11y } from '../hooks/useModalA11y';
 import type { Language, LanguageProgress } from '../types';
 
 interface LanguageEntry {
@@ -127,6 +128,15 @@ export const MyLanguagesView: React.FC = () => {
                 return lang ? { lang, progress, isCurrent: code === targetLang.code } : null;
             })
             .filter((e): e is LanguageEntry => e !== null)
+            // Hide stray cards: hydration creates a row for the default
+            // language even if the user never touched it. A non-current card
+            // with zero progress is noise — it comes back via the picker,
+            // fresh either way.
+            .filter(e => e.isCurrent
+                || e.progress.xp > 0
+                || e.progress.level > 1
+                || e.progress.quizzesCompleted > 0
+                || e.progress.highScore > 0)
             .sort((a, b) => (b.isCurrent ? 1 : 0) - (a.isCurrent ? 1 : 0) || b.progress.xp - a.progress.xp);
     }, [summaries, targetLang.code, profile]);
 
@@ -197,13 +207,50 @@ export const MyLanguagesView: React.FC = () => {
 
             {/* Delete confirmation */}
             {confirmDelete && (
-                <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !isDeleting && setConfirmDelete(null)}>
-                    <div
-                        onClick={e => e.stopPropagation()}
-                        className={`w-full max-w-md rounded-3xl border-2 p-6 shadow-2xl text-center
-                            ${isHighContrast ? 'bg-night-card border-red-500/60' : 'bg-desert border-red-400'}
-                        `}
-                    >
+                <DeleteConfirmModal
+                    entry={confirmDelete}
+                    isDeleting={isDeleting}
+                    isHighContrast={isHighContrast}
+                    onCancel={() => setConfirmDelete(null)}
+                    onConfirm={handleDelete}
+                />
+            )}
+
+            {/* New-language picker */}
+            {pickerOpen && (
+                <LanguagePickerModal
+                    languages={availableLanguages}
+                    isHighContrast={isHighContrast}
+                    onPick={switchTo}
+                    onClose={() => setPickerOpen(false)}
+                />
+            )}
+        </div>
+    );
+};
+
+const DeleteConfirmModal: React.FC<{
+    entry: LanguageEntry;
+    isDeleting: boolean;
+    isHighContrast: boolean;
+    onCancel: () => void;
+    onConfirm: () => void;
+}> = ({ entry: confirmDelete, isDeleting, isHighContrast, onCancel, onConfirm }) => {
+    const dialogRef = useModalA11y(() => { if (!isDeleting) onCancel(); });
+
+    return (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !isDeleting && onCancel()}>
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Delete your ${confirmDelete.lang.name} progress?`}
+                tabIndex={-1}
+                onClick={e => e.stopPropagation()}
+                className={`w-full max-w-md rounded-3xl border-2 p-6 shadow-2xl text-center focus:outline-none
+                    ${isHighContrast ? 'bg-night-card border-red-500/60' : 'bg-desert border-red-400'}
+                `}
+            >
                         <span className="text-5xl block mb-3">{flagOf(confirmDelete.lang.code)}</span>
                         <h2 className={`text-xl font-black mb-2 ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
                             Delete your {confirmDelete.lang.name} progress?
@@ -218,7 +265,7 @@ export const MyLanguagesView: React.FC = () => {
                         )}
                         <div className="flex gap-3 justify-center mt-5">
                             <button
-                                onClick={() => setConfirmDelete(null)}
+                                onClick={onCancel}
                                 disabled={isDeleting}
                                 className={`px-5 py-2.5 rounded-xl font-bold border-2 transition-all
                                     ${isHighContrast ? 'border-slate-600 text-white hover:bg-white/10' : 'border-dark-green/30 text-dark-green hover:bg-black/5'}
@@ -227,57 +274,68 @@ export const MyLanguagesView: React.FC = () => {
                                 Keep it
                             </button>
                             <button
-                                onClick={handleDelete}
+                                onClick={onConfirm}
                                 disabled={isDeleting}
                                 className="px-5 py-2.5 rounded-xl font-bold bg-red-600 text-white shadow hover:bg-red-700 hover:shadow-lg transition-all disabled:opacity-60"
                             >
                                 {isDeleting ? 'Deleting…' : 'Yes, delete it'}
                             </button>
                         </div>
-                    </div>
-                </div>
-            )}
+            </div>
+        </div>
+    );
+};
 
-            {/* New-language picker */}
-            {pickerOpen && (
-                <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setPickerOpen(false)}>
-                    <div
-                        onClick={e => e.stopPropagation()}
-                        className={`w-full max-w-2xl max-h-[75vh] overflow-y-auto rounded-3xl border-2 p-6 shadow-2xl
-                            ${isHighContrast ? 'bg-night-card border-slate-700' : 'bg-desert border-gold'}
-                        `}
+const LanguagePickerModal: React.FC<{
+    languages: Language[];
+    isHighContrast: boolean;
+    onPick: (lang: Language) => void;
+    onClose: () => void;
+}> = ({ languages, isHighContrast, onPick, onClose }) => {
+    const dialogRef = useModalA11y(onClose);
+
+    return (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Pick your next language"
+                tabIndex={-1}
+                onClick={e => e.stopPropagation()}
+                className={`w-full max-w-2xl max-h-[75vh] overflow-y-auto rounded-3xl border-2 p-6 shadow-2xl focus:outline-none
+                    ${isHighContrast ? 'bg-night-card border-slate-700' : 'bg-desert border-gold'}
+                `}
+            >
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className={`text-xl font-black ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
+                        Pick your next language
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        className={`p-1.5 rounded-full font-bold ${isHighContrast ? 'text-slate-400 hover:text-white' : 'text-dark-green/50 hover:text-dark-green'}`}
+                        aria-label="Close"
                     >
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className={`text-xl font-black ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
-                                Pick your next language
-                            </h2>
-                            <button
-                                onClick={() => setPickerOpen(false)}
-                                className={`p-1.5 rounded-full font-bold ${isHighContrast ? 'text-slate-400 hover:text-white' : 'text-dark-green/50 hover:text-dark-green'}`}
-                                aria-label="Close"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {availableLanguages.map(lang => (
-                                <button
-                                    key={lang.code}
-                                    onClick={() => switchTo(lang)}
-                                    className={`flex items-center gap-3 rounded-2xl border-2 p-3 font-bold transition-all hover:-translate-y-0.5 hover:border-brand-turquoise
-                                        ${isHighContrast
-                                            ? 'bg-slate-800 border-slate-600 text-white'
-                                            : 'bg-white/80 border-white text-dark-green'}
-                                    `}
-                                >
-                                    <span className="text-2xl">{flagOf(lang.code)}</span>
-                                    <span className="text-sm text-left leading-tight">{lang.name}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                        ✕
+                    </button>
                 </div>
-            )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {languages.map(lang => (
+                        <button
+                            key={lang.code}
+                            onClick={() => onPick(lang)}
+                            className={`flex items-center gap-3 rounded-2xl border-2 p-3 font-bold transition-all hover:-translate-y-0.5 hover:border-brand-turquoise
+                                ${isHighContrast
+                                    ? 'bg-slate-800 border-slate-600 text-white'
+                                    : 'bg-white/80 border-white text-dark-green'}
+                            `}
+                        >
+                            <span className="text-2xl">{flagOf(lang.code)}</span>
+                            <span className="text-sm text-left leading-tight">{lang.name}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 };

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocalization } from '../../contexts/LocalizationContext';
 import { triggerLevelUpConfetti } from '../../utils/confetti';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import { Button } from './Button';
 
 interface LevelUpModalProps {
@@ -10,6 +11,7 @@ interface LevelUpModalProps {
 
 export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, onClose }) => {
     const { t } = useLocalization();
+    const dialogRef = useModalA11y(onClose);
 
     useEffect(() => {
         triggerLevelUpConfetti();
@@ -17,7 +19,13 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, onClose }) =>
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white p-8 rounded-3xl shadow-2xl border-4 border-gold text-center max-w-sm w-full relative overflow-hidden">
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label={t('levelUp.title')}
+                tabIndex={-1}
+                className="bg-white p-8 rounded-3xl shadow-2xl border-4 border-gold text-center max-w-sm w-full relative overflow-hidden focus:outline-none">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-turquoise via-gold to-brand-turquoise animate-pulse"></div>
 
                 <div className="mb-6 relative">
