@@ -132,7 +132,7 @@ export interface TrainingCategory {
 }
 
 
-export type AppView = 'home' | 'dashboard' | 'quiz' | 'lightning' | 'chat' | 'profile' | 'sagaMap' | 'training' | 'practiceQuiz' | 'placement';
+export type AppView = 'home' | 'dashboard' | 'quiz' | 'lightning' | 'chat' | 'profile' | 'sagaMap' | 'training' | 'practiceQuiz' | 'placement' | 'languages';
 
 export type QuestType = 'quiz_complete' | 'xp_earn' | 'chat_message';
 

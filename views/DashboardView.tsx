@@ -3,6 +3,7 @@ import { useAppContext } from '../contexts/AppContext';
 import { useLocalization } from '../contexts/LocalizationContext';
 import { DailyQuestsCard } from '../components/common/DailyQuestsCard';
 import { generateMistakeReviewQuiz } from '../services/geminiService';
+import { flagOf } from '../constants/languages';
 
 interface MenuCardProps {
     title: string;
@@ -157,18 +158,23 @@ export const DashboardView = () => {
 
     return (
         <div className="flex flex-col h-full w-full max-w-7xl mx-auto px-4 py-2 md:py-4 animate-fade-in">
-            {/* Header */}
-            <div className="shrink-0 flex justify-between items-center mb-2 md:mb-4">
-                <h1 className={`text-2xl md:text-3xl font-bold drop-shadow-sm ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
-                    {t('dashboard.title')}
-                </h1>
+            {/* Header — always says whose journey these numbers belong to */}
+            <div className="shrink-0 flex justify-between items-center mb-2 md:mb-4 gap-3">
+                <div className="min-w-0">
+                    <h1 className={`text-2xl md:text-3xl font-bold drop-shadow-sm truncate ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
+                        {flagOf(targetLang.code)} Learning {targetLang.name}
+                    </h1>
+                    <p className={`text-xs md:text-sm font-bold ${isHighContrast ? 'text-teal-300' : 'text-brand-turquoise'}`}>
+                        Level {profile.level} · progress saved separately per language
+                    </p>
+                </div>
                 <button
-                    onClick={() => setView('home')}
-                    className={`text-xs md:text-sm underline font-bold hover:text-brand-turquoise
+                    onClick={() => setView('languages')}
+                    className={`shrink-0 text-xs md:text-sm underline font-bold hover:text-brand-turquoise
                         ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}
                     `}
                 >
-                    {t('dashboard.changeLanguage')}
+                    🌍 My Languages
                 </button>
             </div>
 

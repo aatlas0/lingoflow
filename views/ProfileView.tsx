@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useLocalization } from '../contexts/LocalizationContext';
 import { ACHIEVEMENTS, XP_PER_LEVEL } from '../constants/achievements';
+import { LANGUAGES, flagOf } from '../constants/languages';
+import { fetchAllLanguageProgress, extractProgress } from '../services/progressService';
+import type { LanguageProgress } from '../types';
 
 const XPBar: React.FC<{ xp: number; level: number }> = ({ xp, level }) => {
     const { t } = useLocalization();
@@ -67,6 +71,81 @@ const AchievementIcon: React.FC<{ achievementId: string; isUnlocked: boolean }> 
     );
 }
 
+// Every started language with its own saved level — the visible proof that
+// switching languages never mixes or loses progress.
+const LanguagesStrip: React.FC = () => {
+    const { profile, targetLang, setView, isHighContrast } = useAppContext();
+    const { user } = useAuth();
+    const [rows, setRows] = useState<{ langCode: string; progress: LanguageProgress }[]>([]);
+
+    useEffect(() => {
+        if (!user) return;
+        let cancelled = false;
+        fetchAllLanguageProgress(user.id).then(data => {
+            if (!cancelled) setRows(data);
+        });
+        return () => { cancelled = true; };
+    }, [user?.id]);
+
+    const byCode = new Map<string, LanguageProgress>(rows.map(r => [r.langCode, r.progress]));
+    byCode.set(targetLang.code, extractProgress(profile)); // live numbers win
+    const entries = [...byCode.entries()]
+        .map(([code, progress]) => ({ lang: LANGUAGES.find(l => l.code === code), progress, isCurrent: code === targetLang.code }))
+        .filter(e => e.lang)
+        .sort((a, b) => (b.isCurrent ? 1 : 0) - (a.isCurrent ? 1 : 0) || b.progress.xp - a.progress.xp);
+
+    return (
+        <div className="mb-10">
+            <div className="flex items-center justify-between mb-6">
+                <h2 className={`text-2xl font-bold border-b-4 border-gold inline-block pb-1 px-2 ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
+                    🌍 My Languages
+                </h2>
+                <button
+                    onClick={() => setView('languages')}
+                    className={`text-sm underline font-bold hover:text-brand-turquoise ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}
+                >
+                    Manage
+                </button>
+            </div>
+            <div className="space-y-3">
+                {entries.map(({ lang, progress, isCurrent }) => {
+                    const xpIntoLevel = Math.max(0, progress.xp - (progress.level - 1) * XP_PER_LEVEL);
+                    const pct = Math.min(100, (xpIntoLevel / XP_PER_LEVEL) * 100);
+                    return (
+                        <div
+                            key={lang!.code}
+                            className={`flex items-center gap-4 p-4 rounded-2xl border shadow-sm
+                                ${isCurrent
+                                    ? (isHighContrast ? 'bg-night-card border-brand-turquoise' : 'bg-white border-brand-turquoise')
+                                    : (isHighContrast ? 'bg-night-card/60 border-slate-700' : 'bg-white/60 border-desert-dark')}
+                            `}
+                        >
+                            <span className="text-3xl shrink-0">{flagOf(lang!.code)}</span>
+                            <div className="flex-grow min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <p className={`font-bold truncate ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>{lang!.name}</p>
+                                    {isCurrent && (
+                                        <span className="text-[9px] font-black uppercase tracking-widest bg-brand-turquoise text-white px-2 py-0.5 rounded-full shrink-0">
+                                            Now
+                                        </span>
+                                    )}
+                                </div>
+                                <div className={`mt-1.5 h-2 rounded-full overflow-hidden max-w-xs ${isHighContrast ? 'bg-slate-800' : 'bg-dark-green/10'}`}>
+                                    <div className="h-full bg-gradient-to-r from-brand-turquoise to-gold" style={{ width: `${pct}%` }}></div>
+                                </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                                <p className={`font-black ${isHighContrast ? 'text-teal-300' : 'text-brand-turquoise'}`}>Lv {progress.level}</p>
+                                <p className={`text-xs font-bold ${isHighContrast ? 'text-slate-400' : 'text-dark-green/50'}`}>{progress.xp} XP</p>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 export const ProfileView = () => {
     const { profile, isHighContrast, targetLang } = useAppContext();
     const { t } = useLocalization();
@@ -76,7 +155,7 @@ export const ProfileView = () => {
             <div className="shrink-0 text-center mb-6 md:mb-10">
                 <h1 className={`text-3xl md:text-5xl font-bold mb-2 drop-shadow-sm ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>{t('profile.title')}</h1>
                 <p className={`text-sm font-bold uppercase tracking-widest ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
-                    Your journey in {targetLang.name} · progress is saved per language
+                    {flagOf(targetLang.code)} Your journey in {targetLang.name} · progress is saved per language
                 </p>
             </div>
 
@@ -96,6 +175,9 @@ export const ProfileView = () => {
                     <StatCard label={t('profile.stat.quizzesCompleted')} value={profile.quizzesCompleted} icon="🧠" />
                     <StatCard label={t('profile.stat.totalXp')} value={profile.xp} icon="✨" />
                 </div>
+
+                {/* Per-language progress */}
+                <LanguagesStrip />
 
                 {/* Achievements Section */}
                 <div>

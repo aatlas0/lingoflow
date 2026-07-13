@@ -27,3 +27,14 @@ export const LANGUAGES: Language[] = [
   { code: 'el', name: 'Greek' },
   { code: 'uk', name: 'Ukrainian' },
 ];
+
+// Flag emoji per language code — languages are first-class identities in the
+// UI (header chip, My Languages hub, dashboard title).
+export const LANGUAGE_FLAGS: Record<string, string> = {
+  en: '🇬🇧', es: '🇪🇸', fr: '🇫🇷', de: '🇩🇪', it: '🇮🇹', pt: '🇵🇹',
+  ru: '🇷🇺', ja: '🇯🇵', ko: '🇰🇷', zh: '🇨🇳', ar: '🇸🇦', ary: '🇲🇦',
+  hi: '🇮🇳', bn: '🇧🇩', ur: '🇵🇰', id: '🇮🇩', tr: '🇹🇷', nl: '🇳🇱',
+  da: '🇩🇰', sv: '🇸🇪', pl: '🇵🇱', he: '🇮🇱', el: '🇬🇷', uk: '🇺🇦',
+};
+
+export const flagOf = (code: string): string => LANGUAGE_FLAGS[code] ?? '🌐';

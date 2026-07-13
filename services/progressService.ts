@@ -117,6 +117,30 @@ export const fetchLanguageState = async (userId: string, targetLang: string): Pr
   };
 };
 
+export interface LanguageProgressSummary {
+  langCode: string;
+  progress: LanguageProgress;
+}
+
+// Every language this account has started, with its own saved progress —
+// powers the My Languages hub and the profile's per-language strip.
+export const fetchAllLanguageProgress = async (userId: string): Promise<LanguageProgressSummary[]> => {
+  const { data, error } = await getSupabase()
+    .from('language_state')
+    .select('target_lang, progress')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Failed to fetch language summaries:', error.message);
+    return [];
+  }
+
+  return (data ?? []).map(row => ({
+    langCode: row.target_lang as string,
+    progress: (row.progress as LanguageProgress) ?? FRESH_LANGUAGE_PROGRESS,
+  }));
+};
+
 export const saveLanguageState = async (
   userId: string,
   targetLang: string,

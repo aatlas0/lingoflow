@@ -142,6 +142,7 @@ export const QuizView = () => {
     // Overdrive State
     const [isOverdriveActive, setIsOverdriveActive] = useState(false);
     const [isOverdriveLoading, setIsOverdriveLoading] = useState(false);
+    const [showOverdriveBanner, setShowOverdriveBanner] = useState(false);
 
     // Auto-advance effect
     useEffect(() => {
@@ -176,8 +177,9 @@ export const QuizView = () => {
                         setIsOverdriveActive(true);
                         setSelectedAnswer(null);
                         setCurrentQuestionIndex(prev => prev + 1);
-                        // Ideally show a flash message here
-                        alert("⚡ OVERDRIVE ACTIVATED! +2 BONUS QUESTIONS! ⚡");
+                        // Non-blocking banner (a browser alert() froze the quiz)
+                        setShowOverdriveBanner(true);
+                        setTimeout(() => setShowOverdriveBanner(false), 3000);
                     } catch (err) {
                         console.error("Failed to load overdrive:", err);
                         setQuizState('reviewing');
@@ -326,6 +328,14 @@ export const QuizView = () => {
 
     return (
         <div className="w-full h-full max-w-4xl mx-auto p-4 flex flex-col">
+            {showOverdriveBanner && (
+                <div
+                    role="status"
+                    className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black px-6 py-3 rounded-full shadow-2xl animate-fade-in text-center"
+                >
+                    ⚡ OVERDRIVE! Perfect score — 2 bonus questions at double XP! ⚡
+                </div>
+            )}
             {/* Header / Progress */}
             <div className="shrink-0 flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4 flex-1">

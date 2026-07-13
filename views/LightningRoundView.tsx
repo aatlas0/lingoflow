@@ -34,11 +34,16 @@ export const LightningRoundView = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     const timerRef = useRef<number | null>(null);
+    const isPrefetchingRef = useRef(false);
+
+    // One 60s round burns through questions fast: fetch a big batch up front
+    // and top it up in the background so the game never pauses mid-round.
+    const BATCH_SIZE = 12;
 
     const loadQuestions = useCallback(async () => {
         setIsLoading(true);
         try {
-            const newQuestions = await generateQuiz(sourceLang, targetLang);
+            const newQuestions = await generateQuiz(sourceLang, targetLang, profile.level, BATCH_SIZE);
             setQuestions(newQuestions);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred.');
@@ -46,7 +51,18 @@ export const LightningRoundView = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [sourceLang, targetLang, setError]);
+    }, [sourceLang, targetLang, profile.level, setError]);
+
+    const prefetchMoreQuestions = useCallback(() => {
+        if (isPrefetchingRef.current) return;
+        isPrefetchingRef.current = true;
+        generateQuiz(sourceLang, targetLang, profile.level, BATCH_SIZE)
+            .then(newQuestions => setQuestions(prev => [...prev, ...newQuestions]))
+            // Never interrupt a running round over a failed top-up; the
+            // round recycles earlier questions if it truly runs out.
+            .catch(err => console.error('Lightning prefetch failed:', err))
+            .finally(() => { isPrefetchingRef.current = false; });
+    }, [sourceLang, targetLang, profile.level]);
 
     useEffect(() => {
         loadQuestions();
@@ -65,11 +81,15 @@ export const LightningRoundView = () => {
             if (timerRef.current) clearInterval(timerRef.current);
             setGameState('finished');
             updateHighScore(score);
+            // XP is awarded once at the end of the round: per-answer awards
+            // re-rendered the whole app on every tap (the lag) and could pop
+            // the level-up modal mid-game.
+            if (score > 0) addXp(score * XP_GAINS.LIGHTNING_CORRECT);
         }
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [gameState, timeLeft, score, updateHighScore]);
+    }, [gameState, timeLeft, score, updateHighScore, addXp]);
 
     const startGame = () => {
         if (questions.length === 0) {
@@ -88,14 +108,16 @@ export const LightningRoundView = () => {
         const currentQuestion = questions[currentQuestionIndex];
         if (areTextsEqual(selectedAnswer, currentQuestion.correctAnswer)) {
             setScore(prev => prev + 1);
-            addXp(XP_GAINS.LIGHTNING_CORRECT);
         }
 
-        if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex(prev => prev + 1);
-        } else {
-            // Out of questions, load more
-            loadQuestions().then(() => setCurrentQuestionIndex(0));
+        // Recycle from the start if the prefetch hasn't landed yet — never
+        // swap the game for a loading screen while the timer is running.
+        const nextIndex = currentQuestionIndex + 1;
+        setCurrentQuestionIndex(nextIndex >= questions.length ? 0 : nextIndex);
+
+        // Top up in the background when running low.
+        if (questions.length - nextIndex <= 4) {
+            prefetchMoreQuestions();
         }
     };
 

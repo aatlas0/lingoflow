@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLocalization } from '../../contexts/LocalizationContext';
 import { useImmersion } from '../../contexts/ImmersionContext';
 import { effectiveStreak } from '../../utils/streak';
+import { flagOf } from '../../constants/languages';
 
 export const Header = () => {
     const { isHighContrast, toggleHighContrast, profile, currentView, setView, targetLang } = useAppContext();
@@ -54,6 +55,23 @@ export const Header = () => {
                             <span className={`font-bold text-xl tracking-wider hidden sm:block
                                 ${isHighContrast ? 'text-white' : 'text-desert'}
                             `}>LingoFlow</span>
+                        </button>
+
+                        {/* Which language you're learning — tap to manage/switch */}
+                        <button
+                            onClick={() => setView('languages')}
+                            title={`Learning ${targetLang.name} (Level ${profile.level}) — tap to switch or manage languages`}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold text-sm transition-all hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold
+                                ${isHighContrast ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-black/20 text-desert hover:bg-black/30'}
+                            `}
+                        >
+                            <span className="text-base">{flagOf(targetLang.code)}</span>
+                            <span className="hidden md:inline">{targetLang.name}</span>
+                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full
+                                ${isHighContrast ? 'bg-brand-turquoise text-white' : 'bg-gold text-dark-green'}
+                            `}>
+                                LVL {profile.level}
+                            </span>
                         </button>
                     </div>
 

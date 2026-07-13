@@ -16,30 +16,46 @@ import { SagaMapView } from './views/SagaMapView';
 import { PlacementView } from './views/PlacementView';
 import { TrainingGroundsView } from './views/TrainingGroundsView';
 import { PracticeQuizView } from './views/PracticeQuizView';
-import { Button } from './components/common/Button';
+import { MyLanguagesView } from './views/MyLanguagesView';
 import { LevelUpModal } from './components/common/LevelUpModal';
 
+// Non-blocking toast: background failures (quests, translations…) used to
+// throw a full-screen overlay over whatever the user was doing.
 const ErrorDisplay: React.FC = () => {
-    const { error, setError, setView } = useAppContext();
+    const { error, setError } = useAppContext();
     const { t } = useLocalization();
+
+    React.useEffect(() => {
+        if (!error) return;
+        const timer = setTimeout(() => setError(null), 8000);
+        return () => clearTimeout(timer);
+    }, [error, setError]);
+
     if (!error) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-red-900/80 backdrop-blur-md border border-red-500 text-white p-8 rounded-xl max-w-md text-center">
-                <h2 className="text-2xl font-bold mb-4">{t('common.error.title')}</h2>
-                <p className="mb-6">{error}</p>
-                <div className="flex gap-4 justify-center">
-                    <Button onClick={() => setError(null)} variant="secondary">{t('common.error.dismiss')}</Button>
-                    <Button onClick={() => setView('home')}>{t('common.error.goHome')}</Button>
-                </div>
-            </div>
+        <div
+            role="alert"
+            className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-md w-[calc(100%-2rem)] bg-red-900/95 backdrop-blur-md border border-red-500 text-white px-5 py-4 rounded-2xl shadow-2xl flex items-start gap-3 animate-fade-in-up"
+        >
+            <span className="text-xl shrink-0">⚠️</span>
+            <p className="flex-1 text-sm leading-relaxed">{error}</p>
+            <button
+                onClick={() => setError(null)}
+                className="font-bold text-white/70 hover:text-white px-1 shrink-0"
+                aria-label={t('common.error.dismiss')}
+            >
+                ✕
+            </button>
         </div>
     );
 }
 
+// Views where a modal popping up would interrupt an active game.
+const GAME_VIEWS: string[] = ['quiz', 'lightning', 'practiceQuiz', 'placement'];
+
 const AppContent: React.FC = () => {
-    const { currentView, isHighContrast, showLevelUpModal, newLevel, closeLevelUpModal, currentSubLesson, setCurrentSubLesson, setView } = useAppContext();
+    const { currentView, isHighContrast, showLevelUpModal, newLevel, closeLevelUpModal, currentSubLesson, setCurrentSubLesson, setView, isHydrating, targetLang } = useAppContext();
     const { session, isAuthLoading } = useAuth();
 
     // Auth gate: nothing is accessible without an account.
@@ -52,6 +68,18 @@ const AppContent: React.FC = () => {
     }
     if (!session) {
         return <AuthView />;
+    }
+    // Language switch / login: hold the UI until this language's own progress
+    // is in — otherwise the previous language's numbers flash on screen.
+    if (isHydrating) {
+        return (
+            <div className={`h-screen flex flex-col items-center justify-center gap-4 ${isHighContrast ? 'high-contrast' : ''}`}>
+                <div className="w-12 h-12 border-4 border-brand-turquoise/30 border-t-brand-turquoise rounded-full animate-spin"></div>
+                <p className={`text-lg font-bold ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
+                    Loading your {targetLang.name} journey…
+                </p>
+            </div>
+        );
     }
 
     const renderView = () => {
@@ -72,6 +100,7 @@ const AppContent: React.FC = () => {
             case 'sagaMap': return <SagaMapView />;
             case 'training': return <TrainingGroundsView />;
             case 'placement': return <PlacementView />;
+            case 'languages': return <MyLanguagesView />;
             default: return <HomeView />;
         }
     };
@@ -91,7 +120,7 @@ const AppContent: React.FC = () => {
                 </div>
             </main>
             <ErrorDisplay />
-            {showLevelUpModal && <LevelUpModal level={newLevel} onClose={closeLevelUpModal} />}
+            {showLevelUpModal && !GAME_VIEWS.includes(currentView) && <LevelUpModal level={newLevel} onClose={closeLevelUpModal} />}
         </div>
     );
 };

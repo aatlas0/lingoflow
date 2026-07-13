@@ -88,7 +88,9 @@ const _generateQuizInternal = async (prompt: string, isDarija: boolean): Promise
       config: {
         responseMimeType: "application/json",
         responseSchema: getStrictQuizSchema(),
-        temperature: 0.7,
+        // Higher temperature = more varied questions; the response schema
+        // keeps the JSON structure safe regardless.
+        temperature: 0.9,
       },
     });
 
@@ -133,21 +135,76 @@ NOTES:
 - Do not add extra fields.
 `;
 
+// --- QUESTION VARIETY ---
+// The model converges on the same beginner staples when every call uses the
+// same static prompt: rotate topic themes per call and tell it which recent
+// questions to avoid (remembered per language on this device).
+
+const QUIZ_TOPICS = [
+  'greetings & introductions', 'food & dining', 'travel & transport',
+  'numbers, time & dates', 'family & relationships', 'shopping & money',
+  'weather & seasons', 'directions & places in town', 'work & professions',
+  'hobbies & free time', 'colors & descriptions', 'body & health',
+  'animals & nature', 'home & daily routines', 'emotions & opinions',
+];
+
+const pickQuizTopics = (count = 3): string[] => {
+  const pool = [...QUIZ_TOPICS];
+  const picked: string[] = [];
+  while (picked.length < count && pool.length > 0) {
+    picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  }
+  return picked;
+};
+
+const RECENT_QUESTIONS_CAP = 30;
+const recentQuestionsKey = (langCode: string) => `recentQuestions-${langCode}`;
+
+const getRecentQuestions = (langCode: string): string[] => {
+  try {
+    return JSON.parse(localStorage.getItem(recentQuestionsKey(langCode)) || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const recordRecentQuestions = (langCode: string, questions: QuizQuestion[]) => {
+  try {
+    const texts = questions
+      .map(q => (typeof q.question === 'string' ? q.question : q.question.latin))
+      .filter(Boolean);
+    const merged = [...getRecentQuestions(langCode), ...texts].slice(-RECENT_QUESTIONS_CAP);
+    localStorage.setItem(recentQuestionsKey(langCode), JSON.stringify(merged));
+  } catch { /* storage unavailable — non-fatal */ }
+};
+
+const getAvoidRepeatsClause = (langCode: string): string => {
+  const recent = getRecentQuestions(langCode);
+  if (recent.length === 0) return '';
+  return `
+    The user was recently asked the questions below. Do NOT repeat or lightly rephrase any of them — write completely different questions:
+    ${recent.map(q => `- ${q}`).join('\n    ')}
+  `;
+};
+
 // --- EXPORTED FUNCTIONS ---
 
-export const generateQuiz = async (sourceLang: Language, targetLang: Language, userLevel: number = 1): Promise<QuizQuestion[]> => {
-  console.log(`Generating Daily Quiz for Level: ${userLevel}`);
+export const generateQuiz = async (sourceLang: Language, targetLang: Language, userLevel: number = 1, count: number = 5): Promise<QuizQuestion[]> => {
+  console.log(`Generating Quiz for Level: ${userLevel} (${count} questions)`);
   const isDarija = targetLang.code === 'ary';
 
   const prompt = `
-    Generate 5 multiple-choice questions for learning ${targetLang.name}.
+    Generate ${count} multiple-choice questions for learning ${targetLang.name}.
     User Level: ${userLevel} (1=Beginner, 20=Advanced).
-    Focus: Common daily phrases and vocabulary suitable for this level.
-
+    Focus themes for THIS quiz: ${pickQuizTopics().join(', ')}.
+    Mix question styles: direct translation, fill-in-the-blank sentences, and "how would you say…" situations.
+    ${getAvoidRepeatsClause(targetLang.code)}
     ${getStrictRules(sourceLang, targetLang, isDarija)}
   `;
 
-  return _generateQuizInternal(prompt, isDarija);
+  const questions = await _generateQuizInternal(prompt, isDarija);
+  recordRecentQuestions(targetLang.code, questions);
+  return questions;
 };
 
 const getChatResponseSchema = () => ({

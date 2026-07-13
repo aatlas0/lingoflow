@@ -226,6 +226,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         (legacySource.targetLangCode == null || legacySource.targetLangCode === targetLang.code);
       const progress = langState.progress
         ?? (legacyBelongsHere ? extractProgress(legacySource) : FRESH_LANGUAGE_PROGRESS);
+      // Adoption is strictly one-shot: without this, every language switched
+      // to later would also inherit the legacy values (accounts saved before
+      // the per-language migration have no targetLangCode, so
+      // legacyBelongsHere matches ANY language).
+      loginProfileRef.current = null;
 
       updateProfile({ ...(serverProfile ?? {}), ...progress });
       // Levels arriving via sync or language switch aren't "level ups".
@@ -233,6 +238,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       setSkillTreeState(langState.skillTree);
       setSagaMapState(langState.sagaMap);
+
+      // Pin this language's progress row right away — the debounced saver
+      // can be cancelled by a quick switch, losing the adoption/fresh start.
+      if (!langState.progress) {
+        saveLanguageState(user.id, targetLang.code, langState.skillTree, langState.sagaMap, progress);
+      }
+
       isHydratedRef.current = true;
       setIsHydrating(false);
     })();
