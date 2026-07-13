@@ -7,7 +7,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', className = '', ...props }) => {
-  const baseClasses = 'px-6 py-3 font-bold rounded-lg transition-all duration-300 transform active:scale-95 focus:outline-none border-2 border-transparent';
+  const baseClasses = 'px-6 py-3 font-bold rounded-lg transition-all duration-300 transform active:scale-95 focus:outline-none border-2 border-transparent disabled:opacity-50 disabled:pointer-events-none';
   // Accessibility: focus-visible provides a clear outline only for keyboard users
   const focusClasses = 'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-desert focus-visible:ring-brand-turquoise';
 

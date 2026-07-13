@@ -27,7 +27,7 @@ export const TrainingGroundsView: React.FC = () => {
         (async () => {
             setIsGenerating(true);
             try {
-                const tree = await generateSkillTree(sourceLang, targetLang, profile.level);
+                const tree = await generateSkillTree(sourceLang, targetLang, profile.level, profile.learnerProfile);
                 if (!cancelled) setSkillTree(tree);
             } catch (error) {
                 console.error('Failed to load training data:', error);
@@ -115,7 +115,8 @@ export const TrainingGroundsView: React.FC = () => {
                     subLessons = await generateSubLessons(
                         representativeNode,
                         sourceLang,
-                        targetLang
+                        targetLang,
+                        profile.learnerProfile
                     );
 
                     if (!subLessons || subLessons.length === 0) {

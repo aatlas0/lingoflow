@@ -17,6 +17,7 @@ const initialProfile: UserProfile = {
   mistakes: [],
   completedSubLessons: [],
   placementDone: false,
+  learnerProfile: null,
   sourceLangCode: null,
   targetLangCode: null,
 };

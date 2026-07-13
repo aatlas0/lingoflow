@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import type { QuizQuestion, SubLesson, QuizText } from '../types';
 import { generatePracticeQuizForSubLesson } from '../services/geminiService';
@@ -15,7 +15,7 @@ export const PracticeQuizView: React.FC<PracticeQuizViewProps> = ({
     onComplete,
     onExit
 }) => {
-    const { sourceLang, targetLang, completeSubLesson, addXp } = useAppContext();
+    const { sourceLang, targetLang, completeSubLesson, addXp, profile, recordQuizOutcome } = useAppContext();
 
     const [questions, setQuestions] = useState<QuizQuestion[]>([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -24,16 +24,21 @@ export const PracticeQuizView: React.FC<PracticeQuizViewProps> = ({
     const [score, setScore] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [showResults, setShowResults] = useState(false);
+    // Per-topic results accumulated as the user answers, flushed into the
+    // learner profile when the quiz finishes.
+    const topicOutcomesRef = useRef<{ topic: string; correct: number; total: number }[]>([]);
 
     // Load quiz questions
     useEffect(() => {
         const loadQuiz = async () => {
             setIsLoading(true);
+            topicOutcomesRef.current = [];
             try {
                 const quizQuestions = await generatePracticeQuizForSubLesson(
                     subLesson,
                     sourceLang,
-                    targetLang
+                    targetLang,
+                    profile.learnerProfile
                 );
                 setQuestions(quizQuestions);
             } catch (error) {
@@ -68,6 +73,8 @@ export const PracticeQuizView: React.FC<PracticeQuizViewProps> = ({
         if (isCorrect) {
             setScore(prev => prev + 1);
         }
+        const topic = currentQuestion.topic || subLesson.title;
+        topicOutcomesRef.current.push({ topic, correct: isCorrect ? 1 : 0, total: 1 });
 
         // Auto-advance after 2 seconds
         setTimeout(() => {
@@ -90,6 +97,7 @@ export const PracticeQuizView: React.FC<PracticeQuizViewProps> = ({
                 addXp(subLesson.difficulty * 20); // Reward based on difficulty
             }
 
+            recordQuizOutcome(topicOutcomesRef.current);
             setShowResults(true);
         }
     };

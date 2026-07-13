@@ -13,6 +13,7 @@ export const FRESH_LANGUAGE_PROGRESS: LanguageProgress = {
   mistakes: [],
   completedSubLessons: [],
   placementDone: false,
+  learnerProfile: null,
 };
 
 // The per-language slice of the profile, as stored in language_state.progress.
@@ -25,6 +26,7 @@ export const extractProgress = (p: UserProfile): LanguageProgress => ({
   mistakes: p.mistakes,
   completedSubLessons: p.completedSubLessons,
   placementDone: p.placementDone ?? false,
+  learnerProfile: p.learnerProfile ?? null,
 });
 
 export const fetchProfile = async (userId: string): Promise<UserProfile | null> => {

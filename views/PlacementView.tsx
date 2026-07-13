@@ -1,10 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../contexts/AppContext';
-import { generatePlacementQuiz } from '../services/geminiService';
+import { generatePlacementTest, gradeWriting, generateSkillTree, generateSagaMap } from '../services/geminiService';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { Button } from '../components/common/Button';
 import { XP_PER_LEVEL } from '../constants/achievements';
-import type { QuizQuestion, QuizText, DarijaText } from '../types';
+import { INTEREST_OPTIONS, MIN_INTERESTS } from '../constants/interests';
+import {
+    BANDS_FOR_SELF_ASSESSED,
+    scoreMcq,
+    finalCefr,
+    computeSkillScores,
+    updateTopicStats,
+    CEFR_TO_START_LEVEL,
+    CEFR_LABELS,
+    type McqResult,
+} from '../utils/placement';
+import type {
+    QuizText,
+    DarijaText,
+    SelfAssessedLevel,
+    PlacementTest,
+    WritingGrade,
+    LearnerProfile,
+    SkillScores,
+    CefrLevel,
+} from '../types';
 
 const isDarijaText = (text: QuizText): text is DarijaText =>
     text !== null && typeof text === 'object' && 'arabic' in text;
@@ -18,81 +38,238 @@ const areTextsEqual = (a: QuizText, b: QuizText): boolean => {
     return false;
 };
 
-// Score (out of 10) → starting level. Cap at 5 so advanced learners still
-// have headroom and generated content stays reasonable.
-const scoreToLevel = (score: number): number => {
-    if (score <= 2) return 1;
-    if (score <= 4) return 2;
-    if (score <= 6) return 3;
-    if (score <= 8) return 4;
-    return 5;
+const SELF_ASSESSED_OPTIONS: { id: SelfAssessedLevel; title: string; blurb: string; emoji: string }[] = [
+    { id: 'new', title: 'Complete beginner', blurb: "I'm starting from zero.", emoji: '🌱' },
+    { id: 'elementary', title: 'Elementary', blurb: 'I know some words and simple phrases.', emoji: '🌿' },
+    { id: 'intermediate', title: 'Intermediate', blurb: 'I can handle everyday conversations.', emoji: '🌳' },
+    { id: 'advanced', title: 'Advanced', blurb: "I'm comfortable in most situations.", emoji: '🏔️' },
+];
+
+const CEFR_BLURBS: Record<CefrLevel, string> = {
+    A1: "Fresh start — we'll begin with the very basics and build up fast.",
+    A2: 'You already know your way around simple, everyday language.',
+    B1: "Everyday conversations won't scare you — time to deepen it.",
+    B2: 'Impressive command of the language — nuance is your next frontier.',
+    C1: "Advanced — we'll keep the challenges coming.",
 };
 
-const LEVEL_BLURBS: Record<number, string> = {
-    1: "Fresh start — we'll begin with the very basics and build up fast.",
-    2: 'Elementary — you already know your way around simple phrases.',
-    3: "Intermediate — everyday conversations won't scare you.",
-    4: 'Upper intermediate — impressive command of the language!',
-    5: "Advanced — we'll keep the challenges coming.",
-};
+const SKILL_LABELS: { key: keyof SkillScores; label: string; emoji: string }[] = [
+    { key: 'vocabulary', label: 'Vocabulary', emoji: '📖' },
+    { key: 'grammar', label: 'Grammar', emoji: '🧩' },
+    { key: 'reading', label: 'Reading', emoji: '👀' },
+    { key: 'writing', label: 'Writing', emoji: '✍️' },
+];
 
-type Phase = 'loading' | 'playing' | 'done' | 'error';
+type Phase =
+    | 'level' | 'interests' | 'ready'
+    | 'loading' | 'mcq' | 'writing' | 'grading'
+    | 'results' | 'roadmap' | 'error';
+
+interface PlacementOutcome {
+    cefr: CefrLevel;
+    startLevel: number;
+    correctCount: number;
+    mcqTotal: number;
+    skillScores: SkillScores;
+    grades: WritingGrade[];
+}
 
 export const PlacementView: React.FC = () => {
-    const { sourceLang, targetLang, updateProfile, unlockAchievement, setView, isHighContrast } = useAppContext();
-    const [phase, setPhase] = useState<Phase>('loading');
-    const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [selected, setSelected] = useState<QuizText | null>(null);
-    const [correctCount, setCorrectCount] = useState(0);
-    const [resultLevel, setResultLevel] = useState(1);
+    const {
+        sourceLang, targetLang, profile, updateProfile, unlockAchievement,
+        setView, isHighContrast, setSkillTree, setSagaMap, setError,
+    } = useAppContext();
 
-    const loadTest = async () => {
+    const existing = profile.learnerProfile;
+    const [phase, setPhase] = useState<Phase>('level');
+    const [selfAssessed, setSelfAssessed] = useState<SelfAssessedLevel>(existing?.selfAssessed ?? 'new');
+    const [interests, setInterests] = useState<string[]>(existing?.interests ?? []);
+    const [test, setTest] = useState<PlacementTest | null>(null);
+    const [mcqIndex, setMcqIndex] = useState(0);
+    const [selected, setSelected] = useState<QuizText | null>(null);
+    const [mcqResults, setMcqResults] = useState<McqResult[]>([]);
+    const [topicOutcomes, setTopicOutcomes] = useState<{ topic: string; correct: number; total: number }[]>([]);
+    const [writingIndex, setWritingIndex] = useState(0);
+    const [writingAnswers, setWritingAnswers] = useState<string[]>([]);
+    const [draft, setDraft] = useState('');
+    const [outcome, setOutcome] = useState<PlacementOutcome | null>(null);
+    // The profile object built from this test — passed straight to the
+    // roadmap generators instead of trusting React state to have flushed.
+    const [builtProfile, setBuiltProfile] = useState<LearnerProfile | null>(null);
+
+    const cardClasses = isHighContrast
+        ? 'bg-night-card/90 border-slate-700'
+        : 'bg-white/80 border-white/60';
+    const titleColor = isHighContrast ? 'text-white' : 'text-dark-green';
+    const subColor = isHighContrast ? 'text-slate-300' : 'text-dark-green/70';
+    const chipBase = isHighContrast
+        ? 'bg-slate-800 border-slate-600 text-white hover:border-brand-turquoise'
+        : 'bg-white/95 border-dark-green/20 text-dark-green hover:border-brand-turquoise hover:shadow-lg';
+    const chipActive = 'bg-brand-turquoise text-white border-brand-turquoise shadow-xl';
+
+    const toggleInterest = (id: string) => {
+        setInterests(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    };
+
+    const startTest = async () => {
         setPhase('loading');
-        setQuestions([]);
-        setCurrentIndex(0);
+        setMcqIndex(0);
         setSelected(null);
-        setCorrectCount(0);
+        setMcqResults([]);
+        setTopicOutcomes([]);
+        setWritingIndex(0);
+        setWritingAnswers([]);
+        setDraft('');
         try {
-            const qs = await generatePlacementQuiz(sourceLang, targetLang);
-            if (!qs || qs.length === 0) throw new Error('empty placement quiz');
-            setQuestions(qs);
-            setPhase('playing');
+            const generated = await generatePlacementTest(sourceLang, targetLang, selfAssessed);
+            setTest(generated);
+            setPhase('mcq');
         } catch (error) {
             console.error('Failed to generate placement test:', error);
             setPhase('error');
         }
     };
 
-    useEffect(() => {
-        loadTest();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    const buildLearnerProfile = (
+        cefr: CefrLevel,
+        skillScores: SkillScores,
+        outcomes: { topic: string; correct: number; total: number }[]
+    ): LearnerProfile => {
+        // Placement seeds the weak/strong areas from the skill breakdown; the
+        // per-topic stats start accumulating from the test's own questions.
+        const weakAreas = SKILL_LABELS.filter(s => skillScores[s.key] < 60).map(s => s.label.toLowerCase());
+        const strongAreas = SKILL_LABELS.filter(s => skillScores[s.key] >= 85).map(s => s.label.toLowerCase());
+        return {
+            selfAssessed,
+            cefr,
+            skillScores,
+            interests,
+            weakAreas,
+            strongAreas,
+            topicStats: updateTopicStats(existing?.topicStats ?? [], outcomes),
+            placementDate: new Date().toISOString(),
+        };
+    };
 
-    const finish = (finalCorrect: number) => {
-        const level = scoreToLevel(finalCorrect);
-        setResultLevel(level);
-        updateProfile({ level, xp: (level - 1) * XP_PER_LEVEL, placementDone: true });
+    const applyResult = (result: PlacementOutcome, outcomes: { topic: string; correct: number; total: number }[]): LearnerProfile => {
+        const learnerProfile = buildLearnerProfile(result.cefr, result.skillScores, outcomes);
+        updateProfile({
+            level: result.startLevel,
+            xp: (result.startLevel - 1) * XP_PER_LEVEL,
+            placementDone: true,
+            learnerProfile,
+        });
         unlockAchievement('placement_complete');
-        setPhase('done');
+        setOutcome(result);
+        setBuiltProfile(learnerProfile);
+        return learnerProfile;
+    };
+
+    const finishTest = async (finalResults: McqResult[], finalOutcomes: { topic: string; correct: number; total: number }[], answers: string[]) => {
+        if (!test) return;
+        setPhase('grading');
+
+        let grades: WritingGrade[] = [];
+        try {
+            grades = await gradeWriting(
+                test.writing.map((w, i) => ({ prompt: w.prompt, answer: answers[i] ?? '' })),
+                sourceLang,
+                targetLang
+            );
+        } catch (error) {
+            // Writing grading is an enhancer, not a gate — fall back to MCQ-only.
+            console.error('Writing grading failed:', error);
+            grades = test.writing.map(() => ({ score: 0, feedback: '' }));
+        }
+
+        const answered = grades.filter((_, i) => (answers[i] ?? '').trim().length > 0);
+        const writingAvg = answered.length > 0
+            ? answered.reduce((sum, g) => sum + g.score, 0) / answered.length
+            : null;
+
+        const bands = BANDS_FOR_SELF_ASSESSED[selfAssessed];
+        const cefr = finalCefr(scoreMcq(finalResults, bands), writingAvg);
+        const result: PlacementOutcome = {
+            cefr,
+            startLevel: CEFR_TO_START_LEVEL[cefr],
+            correctCount: finalResults.filter(r => r.isCorrect).length,
+            mcqTotal: finalResults.length,
+            skillScores: computeSkillScores(finalResults, writingAvg),
+            grades,
+        };
+        applyResult(result, finalOutcomes);
+        setPhase('results');
     };
 
     const handleSelect = (option: QuizText) => {
-        if (selected) return; // ignore double clicks while advancing
+        if (!test || selected) return; // ignore double clicks while advancing
         setSelected(option);
 
-        const isCorrect = areTextsEqual(option, questions[currentIndex].correctAnswer);
-        const nextCorrect = correctCount + (isCorrect ? 1 : 0);
-        setCorrectCount(nextCorrect);
+        const question = test.mcq[mcqIndex];
+        const isCorrect = areTextsEqual(option, question.correctAnswer);
+        const nextResults = [...mcqResults, { skill: question.skill, cefr: question.cefr, isCorrect }];
+        const nextOutcomes = question.topic
+            ? [...topicOutcomes, { topic: question.topic, correct: isCorrect ? 1 : 0, total: 1 }]
+            : topicOutcomes;
+        setMcqResults(nextResults);
+        setTopicOutcomes(nextOutcomes);
 
         setTimeout(() => {
-            if (currentIndex < questions.length - 1) {
-                setSelected(null);
-                setCurrentIndex(i => i + 1);
+            setSelected(null);
+            if (mcqIndex < test.mcq.length - 1) {
+                setMcqIndex(i => i + 1);
+            } else if (test.writing.length > 0) {
+                setPhase('writing');
             } else {
-                finish(nextCorrect);
+                finishTest(nextResults, nextOutcomes, []);
             }
         }, 400);
+    };
+
+    const submitWriting = (skip: boolean) => {
+        if (!test) return;
+        const answers = [...writingAnswers];
+        answers[writingIndex] = skip ? '' : draft;
+        setWritingAnswers(answers);
+        setDraft('');
+        if (writingIndex < test.writing.length - 1) {
+            setWritingIndex(i => i + 1);
+        } else {
+            finishTest(mcqResults, topicOutcomes, answers);
+        }
+    };
+
+    // "Brand new" shortcut on the ready screen: a guaranteed-zero test helps
+    // nobody — start at A1 with an interests-seeded profile and go straight
+    // to roadmap building.
+    const startFromZero = () => {
+        const skillScores: SkillScores = { vocabulary: 0, grammar: 0, reading: 0, writing: 0 };
+        const learnerProfile = applyResult({
+            cefr: 'A1',
+            startLevel: 1,
+            correctCount: 0,
+            mcqTotal: 0,
+            skillScores,
+            grades: [],
+        }, []);
+        buildRoadmap(learnerProfile, 1);
+    };
+
+    const buildRoadmap = async (learnerProfile: LearnerProfile | null | undefined, startLevel: number) => {
+        setPhase('roadmap');
+        try {
+            const [tree, map] = await Promise.all([
+                generateSkillTree(sourceLang, targetLang, startLevel, learnerProfile),
+                generateSagaMap(sourceLang, targetLang, startLevel, learnerProfile),
+            ]);
+            setSkillTree(tree);
+            setSagaMap(map);
+        } catch (error) {
+            // The saga map and training grounds can still generate lazily.
+            console.error('Roadmap generation failed:', error);
+            setError('Your roadmap will finish building the first time you open the map.');
+        }
+        setView('dashboard');
     };
 
     const skip = () => {
@@ -100,18 +277,131 @@ export const PlacementView: React.FC = () => {
         setView('dashboard');
     };
 
-    const cardClasses = isHighContrast
-        ? 'bg-night-card/90 border-slate-700'
-        : 'bg-white/80 border-white/60';
-    const titleColor = isHighContrast ? 'text-white' : 'text-dark-green';
-    const subColor = isHighContrast ? 'text-slate-300' : 'text-dark-green/70';
+    const StepShell: React.FC<{ children: React.ReactNode; wide?: boolean }> = ({ children, wide }) => (
+        <div className="flex items-center justify-center min-h-full p-4 animate-fade-in">
+            <div className={`backdrop-blur-md rounded-3xl shadow-2xl border-2 p-6 md:p-10 w-full ${wide ? 'max-w-2xl' : 'max-w-lg'} ${cardClasses}`}>
+                {children}
+            </div>
+        </div>
+    );
+
+    // --- Step 1: self-assessed level ---
+    if (phase === 'level') {
+        return (
+            <StepShell>
+                <p className={`text-xs font-bold uppercase tracking-widest mb-2 text-center ${subColor}`}>Step 1 of 3</p>
+                <h1 className={`text-2xl md:text-3xl font-extrabold mb-2 text-center ${titleColor}`}>
+                    How good is your {targetLang.name}?
+                </h1>
+                <p className={`mb-6 text-center ${subColor}`}>Your honest guess — the test will confirm it.</p>
+                <div className="space-y-3">
+                    {SELF_ASSESSED_OPTIONS.map(option => (
+                        <button
+                            key={option.id}
+                            onClick={() => { setSelfAssessed(option.id); setPhase('interests'); }}
+                            className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-4 ${selfAssessed === option.id ? chipActive : chipBase}`}
+                        >
+                            <span className="text-3xl">{option.emoji}</span>
+                            <span>
+                                <span className="block font-bold">{option.title}</span>
+                                <span className={`block text-sm ${selfAssessed === option.id ? 'text-white/80' : subColor}`}>{option.blurb}</span>
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            </StepShell>
+        );
+    }
+
+    // --- Step 2: interests ---
+    if (phase === 'interests') {
+        return (
+            <StepShell wide>
+                <p className={`text-xs font-bold uppercase tracking-widest mb-2 text-center ${subColor}`}>Step 2 of 3</p>
+                <h1 className={`text-2xl md:text-3xl font-extrabold mb-2 text-center ${titleColor}`}>
+                    What do you love talking about?
+                </h1>
+                <p className={`mb-6 text-center ${subColor}`}>
+                    Pick at least {MIN_INTERESTS} — your lessons, stories and quizzes will be built around them.
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                    {INTEREST_OPTIONS.map(option => {
+                        const active = interests.includes(option.id);
+                        return (
+                            <button
+                                key={option.id}
+                                onClick={() => toggleInterest(option.id)}
+                                aria-pressed={active}
+                                className={`p-3 rounded-xl border-2 text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${active ? chipActive : chipBase}`}
+                            >
+                                <span className="text-xl">{option.emoji}</span>
+                                <span className="text-left leading-tight">{option.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+                <div className="flex gap-3">
+                    <Button onClick={() => setPhase('level')} variant="secondary" className="flex-1">← Back</Button>
+                    <Button
+                        onClick={() => setPhase('ready')}
+                        disabled={interests.length < MIN_INTERESTS}
+                        className="flex-[2] font-bold"
+                    >
+                        {interests.length < MIN_INTERESTS
+                            ? `Pick ${MIN_INTERESTS - interests.length} more`
+                            : 'Continue →'}
+                    </Button>
+                </div>
+            </StepShell>
+        );
+    }
+
+    // --- Step 3: get ready ---
+    if (phase === 'ready') {
+        return (
+            <StepShell>
+                <p className={`text-xs font-bold uppercase tracking-widest mb-2 text-center ${subColor}`}>Step 3 of 3</p>
+                <div className="text-5xl text-center mb-4">🎯</div>
+                <h1 className={`text-2xl md:text-3xl font-extrabold mb-4 text-center ${titleColor}`}>
+                    Time to find your real level
+                </h1>
+                <ul className={`space-y-2 mb-6 text-sm md:text-base ${subColor}`}>
+                    <li className="flex gap-2"><span>📝</span><span>About 24 questions — vocabulary, grammar, reading and a bit of writing.</span></li>
+                    <li className="flex gap-2"><span>⏱️</span><span>Takes 10–15 minutes. No time pressure on any question.</span></li>
+                    <li className="flex gap-2"><span>📈</span><span>Questions get harder as you go. It's fine to get things wrong — that's the point.</span></li>
+                    <li className="flex gap-2"><span>🗺️</span><span>Your result builds a roadmap made just for you.</span></li>
+                </ul>
+                <Button onClick={startTest} className="w-full py-4 text-lg font-bold mb-3">Start the Test</Button>
+                <div className="flex justify-between items-center">
+                    <button onClick={() => setPhase('interests')} className={`text-sm font-bold underline hover:text-brand-turquoise ${subColor}`}>
+                        ← Back
+                    </button>
+                    {selfAssessed === 'new' && (
+                        <button onClick={startFromZero} className={`text-sm font-bold underline hover:text-brand-turquoise ${subColor}`}>
+                            I'm brand new — start from zero
+                        </button>
+                    )}
+                </div>
+            </StepShell>
+        );
+    }
 
     if (phase === 'loading') {
         return (
             <div className={`flex flex-col items-center justify-center h-full ${titleColor}`}>
                 <LoadingSpinner size="lg" />
                 <p className="mt-4 text-lg font-medium animate-pulse">Preparing your placement test…</p>
-                <p className={`mt-1 text-sm ${subColor}`}>10 questions, easiest to hardest.</p>
+                <p className={`mt-1 text-sm ${subColor}`}>Tailored to your level — easiest to hardest.</p>
+            </div>
+        );
+    }
+
+    if (phase === 'grading') {
+        return (
+            <div className={`flex flex-col items-center justify-center h-full ${titleColor}`}>
+                <LoadingSpinner size="lg" />
+                <p className="mt-4 text-lg font-medium animate-pulse">Analyzing your answers…</p>
+                <p className={`mt-1 text-sm ${subColor}`}>Grading your writing and calculating your level.</p>
             </div>
         );
     }
@@ -121,34 +411,137 @@ export const PlacementView: React.FC = () => {
             <div className="flex flex-col items-center justify-center h-full gap-4">
                 <p className="text-xl text-deep-red">Couldn't load the placement test.</p>
                 <div className="flex gap-3">
-                    <Button onClick={loadTest}>Try Again</Button>
+                    <Button onClick={startTest}>Try Again</Button>
                     <Button onClick={skip} variant="secondary">Skip for now</Button>
                 </div>
             </div>
         );
     }
 
-    if (phase === 'done') {
+    if (phase === 'roadmap') {
         return (
-            <div className="flex items-center justify-center h-full p-4 animate-fade-in">
-                <div className={`backdrop-blur-md rounded-3xl shadow-2xl border-2 p-8 md:p-10 max-w-lg w-full text-center ${cardClasses}`}>
-                    <div className="text-6xl mb-4">🎯</div>
-                    <h1 className={`text-3xl md:text-4xl font-extrabold mb-2 ${titleColor}`}>
-                        You start at Level {resultLevel}!
+            <div className={`flex flex-col items-center justify-center h-full ${titleColor}`}>
+                <LoadingSpinner size="lg" />
+                <p className="mt-4 text-lg font-medium animate-pulse">Building your personal roadmap…</p>
+                <p className={`mt-1 text-sm ${subColor}`}>Charting a {targetLang.name} journey around your level and interests.</p>
+            </div>
+        );
+    }
+
+    // --- Results ---
+    if (phase === 'results' && outcome) {
+        return (
+            <div className="flex items-center justify-center min-h-full p-4 animate-fade-in">
+                <div className={`backdrop-blur-md rounded-3xl shadow-2xl border-2 p-6 md:p-10 max-w-xl w-full ${cardClasses}`}>
+                    <div className="text-6xl text-center mb-3">🏅</div>
+                    <h1 className={`text-3xl md:text-4xl font-extrabold mb-1 text-center ${titleColor}`}>
+                        You're {outcome.cefr} — {CEFR_LABELS[outcome.cefr]}
                     </h1>
-                    <p className={`text-lg mb-1 font-semibold ${subColor}`}>
-                        {correctCount} / {questions.length} correct
-                    </p>
-                    <p className={`mb-8 ${subColor}`}>{LEVEL_BLURBS[resultLevel]}</p>
-                    <Button onClick={() => setView('dashboard')} className="w-full py-4 text-lg font-bold">
-                        Start Learning →
+                    {outcome.mcqTotal > 0 && (
+                        <p className={`text-center font-semibold mb-1 ${subColor}`}>
+                            {outcome.correctCount} / {outcome.mcqTotal} questions correct
+                        </p>
+                    )}
+                    <p className={`text-center mb-6 ${subColor}`}>{CEFR_BLURBS[outcome.cefr]}</p>
+
+                    <div className="space-y-3 mb-6">
+                        {SKILL_LABELS.map(skill => (
+                            <div key={skill.key}>
+                                <div className={`flex justify-between text-sm font-bold mb-1 ${titleColor}`}>
+                                    <span>{skill.emoji} {skill.label}</span>
+                                    <span>{outcome.skillScores[skill.key]}%</span>
+                                </div>
+                                <div className={`h-2.5 rounded-full overflow-hidden ${isHighContrast ? 'bg-slate-700' : 'bg-gray-200'}`}>
+                                    <div
+                                        className="h-full bg-brand-turquoise rounded-full transition-all duration-1000 ease-out"
+                                        style={{ width: `${outcome.skillScores[skill.key]}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {outcome.grades.some(g => g.feedback && g.feedback !== 'No answer given.') && (
+                        <div className={`rounded-xl border p-4 mb-6 text-sm space-y-2 ${isHighContrast ? 'border-slate-600 bg-slate-800/60 text-slate-200' : 'border-dark-green/15 bg-white/60 text-dark-green/90'}`}>
+                            <p className="font-bold">✍️ About your writing:</p>
+                            {outcome.grades.map((g, i) => (
+                                g.feedback && g.feedback !== 'No answer given.'
+                                    ? <p key={i}>• {g.feedback}</p>
+                                    : null
+                            ))}
+                        </div>
+                    )}
+
+                    <Button
+                        onClick={() => buildRoadmap(builtProfile, outcome.startLevel)}
+                        className="w-full py-4 text-lg font-bold"
+                    >
+                        Build My Roadmap →
                     </Button>
                 </div>
             </div>
         );
     }
 
-    const question = questions[currentIndex];
+    // --- Writing section ---
+    if (phase === 'writing' && test) {
+        const task = test.writing[writingIndex];
+        const questionNumber = test.mcq.length + writingIndex + 1;
+        const totalQuestions = test.mcq.length + test.writing.length;
+        return (
+            <div className="w-full h-full max-w-3xl mx-auto p-4 flex flex-col">
+                <div className="shrink-0 flex items-center gap-4 mb-8 mt-2">
+                    <div className={`h-3 rounded-full flex-1 overflow-hidden ${isHighContrast ? 'bg-slate-700' : 'bg-gray-200'}`}>
+                        <div
+                            className="h-full bg-brand-turquoise transition-all duration-500 ease-out"
+                            style={{ width: `${((questionNumber - 1) / totalQuestions) * 100}%` }}
+                        ></div>
+                    </div>
+                    <span className={`text-sm font-bold whitespace-nowrap ${titleColor}`}>
+                        {questionNumber} / {totalQuestions}
+                    </span>
+                </div>
+
+                <div className="flex-grow flex flex-col justify-center items-center pb-10">
+                    <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${subColor}`}>
+                        ✍️ Writing · answer in {targetLang.name}
+                    </p>
+                    <h2 className={`text-xl md:text-3xl font-extrabold mb-3 leading-tight text-center ${titleColor}`}>
+                        {task.prompt}
+                    </h2>
+                    {task.guidance && <p className={`mb-6 text-sm text-center ${subColor}`}>💡 {task.guidance}</p>}
+
+                    <textarea
+                        value={draft}
+                        onChange={e => setDraft(e.target.value)}
+                        rows={4}
+                        autoFocus
+                        placeholder={`Write 1-3 sentences in ${targetLang.name}…`}
+                        className={`w-full max-w-xl p-4 rounded-xl border-2 font-medium focus:ring-2 focus:ring-brand-turquoise focus:border-brand-turquoise outline-none transition-all resize-none
+                            ${isHighContrast
+                                ? 'bg-slate-800 border-slate-600 text-white placeholder:text-slate-500'
+                                : 'bg-white/95 border-dark-green/20 text-dark-green placeholder:text-dark-green/40'}
+                        `}
+                    />
+                    <div className="flex gap-3 mt-5 w-full max-w-xl">
+                        <Button onClick={() => submitWriting(true)} variant="secondary" className="flex-1">Skip</Button>
+                        <Button
+                            onClick={() => submitWriting(false)}
+                            disabled={draft.trim().length === 0}
+                            className="flex-[2] font-bold"
+                        >
+                            {writingIndex < test.writing.length - 1 ? 'Next →' : 'Finish Test'}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // --- MCQ section ---
+    if (!test) return null;
+    const question = test.mcq[mcqIndex];
+    const totalQuestions = test.mcq.length + test.writing.length;
 
     return (
         <div className="w-full h-full max-w-3xl mx-auto p-4 flex flex-col">
@@ -163,18 +556,18 @@ export const PlacementView: React.FC = () => {
                 <div className={`h-3 rounded-full flex-1 overflow-hidden ${isHighContrast ? 'bg-slate-700' : 'bg-gray-200'}`}>
                     <div
                         className="h-full bg-brand-turquoise transition-all duration-500 ease-out"
-                        style={{ width: `${(currentIndex / questions.length) * 100}%` }}
+                        style={{ width: `${(mcqIndex / totalQuestions) * 100}%` }}
                     ></div>
                 </div>
                 <span className={`text-sm font-bold whitespace-nowrap ${titleColor}`}>
-                    {currentIndex + 1} / {questions.length}
+                    {mcqIndex + 1} / {totalQuestions}
                 </span>
             </div>
 
             {/* Question */}
             <div className="flex-grow flex flex-col justify-center items-center pb-10">
                 <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${subColor}`}>
-                    Placement · difficulty rises as you go
+                    Placement · {question.skill} · difficulty rises as you go
                 </p>
                 <h2 className={`text-2xl md:text-4xl font-extrabold mb-10 leading-tight text-center ${titleColor}`}>
                     {getText(question.question)}
@@ -188,11 +581,7 @@ export const PlacementView: React.FC = () => {
                                 key={index}
                                 onClick={() => handleSelect(option)}
                                 className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 font-semibold
-                                    ${isSelected
-                                        ? 'bg-brand-turquoise text-white border-brand-turquoise shadow-xl scale-[1.02]'
-                                        : isHighContrast
-                                            ? 'bg-slate-800 border-slate-600 text-white hover:border-brand-turquoise'
-                                            : 'bg-white/95 border-dark-green/20 text-dark-green hover:border-brand-turquoise hover:shadow-lg'}
+                                    ${isSelected ? `${chipActive} scale-[1.02]` : chipBase}
                                 `}
                             >
                                 {getText(option)}

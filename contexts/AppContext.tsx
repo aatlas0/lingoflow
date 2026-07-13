@@ -7,6 +7,7 @@ import type { Language, UserProfile, AppView, Quest, QuestType, QuizQuestion, Sk
 import { LANGUAGES } from '../constants/languages';
 import { ACHIEVEMENTS } from '../constants/achievements';
 import { clearAiCacheForLanguage } from '../utils/aiCache';
+import { updateTopicStats, deriveAreas } from '../utils/placement';
 
 interface AppContextType {
   sourceLang: Language;
@@ -25,6 +26,8 @@ interface AppContextType {
   showAchievementToast: (achievementId: string) => void;
   addMistake: (mistake: Mistake) => void;
   completeSubLesson: (subLessonId: string) => void;
+  /** Feeds a quiz's per-topic results into the learner profile so future generations adapt. */
+  recordQuizOutcome: (outcomes: { topic: string; correct: number; total: number }[]) => void;
   isHighContrast: boolean;
   toggleHighContrast: () => void;
   currentView: AppView;
@@ -473,6 +476,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     newAchievements.forEach(showAchievementToast);
   }, [rawUnlockAchievement, showAchievementToast]);
 
+  // Every finished quiz updates the learner profile's rolling topic stats and
+  // recomputes weak/strong areas — that's what keeps the AI prompts current.
+  // Skill-level areas seeded by the placement test (e.g. "grammar") persist
+  // until the next placement; topic-level areas float with recent results.
+  const SKILL_AREA_NAMES = ['vocabulary', 'grammar', 'reading', 'writing'];
+  const recordQuizOutcome = useCallback((outcomes: { topic: string; correct: number; total: number }[]) => {
+    if (outcomes.length === 0) return;
+    setProfile(prev => {
+      const lp = prev.learnerProfile;
+      if (!lp) return prev;
+      const topicStats = updateTopicStats(lp.topicStats ?? [], outcomes);
+      const derived = deriveAreas(topicStats);
+      const keepSkills = (areas: string[]) => areas.filter(a => SKILL_AREA_NAMES.includes(a));
+      return {
+        ...prev,
+        learnerProfile: {
+          ...lp,
+          topicStats,
+          weakAreas: [...new Set([...keepSkills(lp.weakAreas ?? []), ...derived.weakAreas])],
+          strongAreas: [...new Set([...keepSkills(lp.strongAreas ?? []), ...derived.strongAreas])],
+        },
+      };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setProfile]);
+
   const deleteLanguageProgress = useCallback(async (langCode: string): Promise<boolean> => {
     if (!user) return false;
     const result = await deleteLanguageState(user.id, langCode);
@@ -539,6 +568,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showAchievementToast,
     addMistake,
     completeSubLesson,
+    recordQuizOutcome,
     isHighContrast,
     toggleHighContrast,
     currentView,
@@ -579,6 +609,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showAchievementToast,
     addMistake,
     completeSubLesson,
+    recordQuizOutcome,
     isHighContrast,
     currentView,
     setView,

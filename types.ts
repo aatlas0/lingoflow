@@ -17,6 +17,62 @@ export interface QuizQuestion {
   options: QuizText[];
   correctAnswer: QuizText;
   explanation?: string;
+  topic?: string; // 1-3 word label ("past tense", "food vocabulary") — feeds the adaptive learner profile
+}
+
+// --- Placement & learner profile ---
+
+export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
+export type SelfAssessedLevel = 'new' | 'elementary' | 'intermediate' | 'advanced';
+export type PlacementSkill = 'vocabulary' | 'grammar' | 'reading';
+
+export interface PlacementQuestion extends QuizQuestion {
+  skill: PlacementSkill;
+  cefr: CefrLevel;
+}
+
+export interface WritingPrompt {
+  prompt: string; // the task, in the learner's native language
+  cefr: CefrLevel;
+  guidance: string; // short hint about what to include
+}
+
+export interface PlacementTest {
+  mcq: PlacementQuestion[];
+  writing: WritingPrompt[];
+}
+
+export interface WritingGrade {
+  score: number; // 0-5
+  feedback: string; // one sentence, in the learner's native language
+}
+
+// 0-100 per skill, revealed after placement and shown on the profile.
+export interface SkillScores {
+  vocabulary: number;
+  grammar: number;
+  reading: number;
+  writing: number;
+}
+
+// Rolling per-topic accuracy — the raw signal behind weak/strong areas.
+export interface TopicStat {
+  topic: string;
+  correct: number;
+  total: number;
+}
+
+// The living picture of one learner in one language. Seeded by the placement
+// test, updated after every quiz, and prepended to every AI generation prompt.
+export interface LearnerProfile {
+  selfAssessed: SelfAssessedLevel;
+  cefr: CefrLevel;
+  skillScores: SkillScores;
+  interests: string[];
+  weakAreas: string[];
+  strongAreas: string[];
+  topicStats: TopicStat[];
+  placementDate: string; // ISO date
 }
 
 export interface UserAnswer {
@@ -50,6 +106,7 @@ export interface UserProfile {
   mistakes: Mistake[];
   completedSubLessons: string[]; // Array of SubLesson IDs
   placementDone?: boolean; // placement test taken for this language
+  learnerProfile?: LearnerProfile | null; // placement result + adaptive state for this language
   // --- Account-global: identity, habit, trophies ---
   streak: number;
   lastActiveDate: string | null; // local 'YYYY-MM-DD' of the last day with activity
@@ -68,6 +125,7 @@ export interface LanguageProgress {
   mistakes: Mistake[];
   completedSubLessons: string[];
   placementDone?: boolean;
+  learnerProfile?: LearnerProfile | null;
 }
 
 export interface CulturalNugget {

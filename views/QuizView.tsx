@@ -65,7 +65,8 @@ export const QuizView = () => {
         setCustomQuiz,
         setView,
         isHighContrast,
-        profile
+        profile,
+        recordQuizOutcome
     } = useAppContext();
     const { t } = useLocalization();
     const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -89,7 +90,7 @@ export const QuizView = () => {
         hasProcessedResults.current = false;
 
         try {
-            const quizData = customQuiz || await generateQuiz(sourceLang, targetLang, profile.level);
+            const quizData = customQuiz || await generateQuiz(sourceLang, targetLang, profile.level, 5, profile.learnerProfile);
             setQuestions(quizData);
             // Do not clear customQuiz here to prevent loss on remount
         } catch (error) {
@@ -122,6 +123,12 @@ export const QuizView = () => {
             // Add XP
             addXp(totalXp);
 
+            // Feed per-topic results into the learner profile so future
+            // generations lean into what this quiz exposed.
+            recordQuizOutcome(userAnswers
+                .filter(a => a.question.topic)
+                .map(a => ({ topic: a.question.topic!, correct: a.isCorrect ? 1 : 0, total: 1 })));
+
             // Mark as complete with a slight delay to allow UI to settle
             setTimeout(() => {
                 completeQuiz();
@@ -133,7 +140,7 @@ export const QuizView = () => {
                 }
             }, 100);
         }
-    }, [quizState, userAnswers, questions.length, addXp, completeQuiz]);
+    }, [quizState, userAnswers, questions.length, addXp, completeQuiz, recordQuizOutcome]);
 
     // Overdrive State
     const [isOverdriveActive, setIsOverdriveActive] = useState(false);

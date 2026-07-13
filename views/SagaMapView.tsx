@@ -180,7 +180,7 @@ export const SagaMapView = () => {
 
             setIsLoading(true);
             try {
-                const map = await generateSagaMap(sourceLang, targetLang, profile.level);
+                const map = await generateSagaMap(sourceLang, targetLang, profile.level, profile.learnerProfile);
                 setSagaMap(map);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'An unknown error occurred.');
@@ -231,7 +231,7 @@ export const SagaMapView = () => {
         try {
             // Import dynamically to avoid circular dependency issues if any
             const { generateEpisode } = await import('../services/geminiService');
-            const episode = await generateEpisode(node, sourceLang, targetLang);
+            const episode = await generateEpisode(node, sourceLang, targetLang, profile.learnerProfile);
             writeAiCache(cacheKey, episode);
             setCurrentEpisode(episode);
         } catch (err) {

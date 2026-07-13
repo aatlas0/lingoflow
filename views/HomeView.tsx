@@ -2,92 +2,65 @@
 import React from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import { useLocalization } from '../contexts/LocalizationContext';
-import { LANGUAGES } from '../constants/languages';
+import { LANGUAGES, flagOf } from '../constants/languages';
 import { Button } from '../components/common/Button';
 import type { Language } from '../types';
 
-const LanguageSelector: React.FC<{
-  label: string;
-  value: Language;
-  onChange: (lang: Language) => void;
+// One step of the onboarding wizard: a scrollable single-select language list.
+const LanguagePickList: React.FC<{
   options: Language[];
-}> = ({ label, value, onChange, options }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  selected: Language | null;
+  onSelect: (lang: Language) => void;
+}> = ({ options, selected, onSelect }) => {
   const { isHighContrast } = useAppContext();
-
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const handleSelect = (lang: Language) => {
-    onChange(lang);
-    setIsOpen(false);
-  };
-
   return (
-    <div className="w-full text-left relative" ref={containerRef}>
-      <label className={`block text-xs font-bold mb-1 uppercase tracking-wider ${isHighContrast ? 'text-slate-400' : 'text-dark-green'}`}>
-        {label}
-      </label>
-
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full border rounded-md py-2 px-3 text-sm focus:ring-2 focus:ring-brand-turquoise focus:border-brand-turquoise shadow-sm cursor-pointer hover:border-brand-turquoise transition-all flex justify-between items-center
-          ${isHighContrast
-            ? 'bg-slate-800 border-slate-600 text-white'
-            : 'bg-white border-desert-dark text-dark-green'}
-        `}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-      >
-        <span className="truncate">{value.name}</span>
-        <span className={`transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} text-xs ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
-          ▼
-        </span>
-      </button>
-
-      {isOpen && (
-        <div className={`absolute z-50 w-full mt-1 border rounded-md shadow-xl max-h-40 overflow-y-auto animate-fade-in-up
-          ${isHighContrast ? 'bg-slate-800 border-slate-600' : 'bg-white border-desert-dark'}
-        `}>
-          <ul role="listbox">
-            {options.map(lang => (
-              <li
-                key={lang.code}
-                role="option"
-                aria-selected={value.code === lang.code}
-                onClick={() => handleSelect(lang)}
-                className={`px-3 py-2 text-sm cursor-pointer transition-colors
-                  ${value.code === lang.code
-                    ? (isHighContrast ? 'bg-brand-turquoise/30 font-bold text-white' : 'bg-brand-turquoise/20 font-bold text-dark-green')
-                    : (isHighContrast ? 'text-slate-200 hover:bg-slate-700' : 'text-dark-green hover:bg-brand-turquoise/10')
-                  }
-                `}
-              >
-                {lang.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+    <div
+      role="listbox"
+      className={`max-h-64 overflow-y-auto rounded-xl border p-1.5 space-y-1
+        ${isHighContrast ? 'border-slate-600 bg-slate-900/40' : 'border-desert-dark/40 bg-white/50'}
+      `}
+    >
+      {options.map(lang => {
+        const isActive = selected?.code === lang.code;
+        return (
+          <button
+            key={lang.code}
+            type="button"
+            role="option"
+            aria-selected={isActive}
+            onClick={() => onSelect(lang)}
+            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-3
+              ${isActive
+                ? 'bg-brand-turquoise text-white shadow-md'
+                : (isHighContrast ? 'text-slate-200 hover:bg-slate-700' : 'text-dark-green hover:bg-brand-turquoise/10')}
+            `}
+          >
+            <span className="text-xl">{flagOf(lang.code)}</span>
+            <span className="flex-1">{lang.name}</span>
+            {isActive && <span>✓</span>}
+          </button>
+        );
+      })}
     </div>
   );
 };
 
 export const HomeView = () => {
-  const { sourceLang, setSourceLang, targetLang, setTargetLang, setView, isHighContrast, toggleHighContrast } = useAppContext();
+  const { setSourceLang, setTargetLang, setView, isHighContrast, toggleHighContrast } = useAppContext();
   const { t } = useLocalization();
+
+  const [step, setStep] = React.useState<1 | 2>(1);
+  const [native, setNative] = React.useState<Language | null>(null);
+  const [target, setTarget] = React.useState<Language | null>(null);
+
+  // Committing the pair kicks off hydration for the target language, then the
+  // placement flow takes over (level → interests → test → roadmap).
+  const startJourney = () => {
+    if (!native || !target) return;
+    setSourceLang(native);
+    setTargetLang(target);
+    setView('placement');
+  };
 
   return (
     <div className="flex flex-col lg:flex-row items-center justify-center min-h-full p-6 lg:p-12 animate-fade-in relative gap-12 lg:gap-24">
@@ -130,44 +103,64 @@ export const HomeView = () => {
         </p>
       </div>
 
-      {/* Right Side: Action Card */}
+      {/* Right Side: Onboarding Card */}
       <div className="flex-1 w-full max-w-sm">
-        <div className={`backdrop-blur-xl p-5 md:p-6 rounded-3xl shadow-2xl border transform transition-all hover:scale-[1.01]
+        <div className={`backdrop-blur-xl p-5 md:p-6 rounded-3xl shadow-2xl border transform transition-all
           ${isHighContrast
             ? 'bg-night-card/80 border-slate-700'
             : 'bg-white/70 border-white/60'}
         `}>
-          <h2 className={`text-xl font-bold mb-4 text-center ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>{t('home.startAdventure')}</h2>
+          <p className={`text-xs font-bold uppercase tracking-widest mb-1 text-center ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
+            Step {step} of 2
+          </p>
+          <h2 className={`text-xl font-bold mb-4 text-center ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
+            {step === 1 ? 'Which language do you speak?' : 'Which language do you want to learn?'}
+          </h2>
 
-          <div className="space-y-3 mb-5">
-            <LanguageSelector
-              label={t('home.sourceLangLabel')}
-              value={sourceLang}
-              onChange={setSourceLang}
-              options={LANGUAGES}
-            />
-
-            <div className="flex items-center justify-center -my-2 relative z-10">
-              <div className={`rounded-full p-1 shadow-sm border
-                ${isHighContrast
-                  ? 'bg-slate-800 border-slate-600'
-                  : 'bg-white/80 border-desert/30'}
-              `}>
-                <span className={`text-lg ${isHighContrast ? 'text-slate-400' : 'text-dark-green/70'}`}>↓</span>
+          {step === 1 ? (
+            <>
+              <div className="mb-4">
+                <LanguagePickList
+                  options={LANGUAGES}
+                  selected={native}
+                  onSelect={lang => {
+                    setNative(lang);
+                    if (target?.code === lang.code) setTarget(null);
+                  }}
+                />
               </div>
-            </div>
-
-            <LanguageSelector
-              label={t('home.targetLangLabel')}
-              value={targetLang}
-              onChange={setTargetLang}
-              options={LANGUAGES}
-            />
-          </div>
-
-          <Button onClick={() => setView('dashboard')} className="w-full text-lg py-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-bold tracking-wide">
-            {t('home.startAdventure')}
-          </Button>
+              <Button
+                onClick={() => setStep(2)}
+                disabled={!native}
+                className="w-full text-lg py-3 shadow-lg font-bold tracking-wide"
+              >
+                Next →
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="mb-4">
+                <LanguagePickList
+                  options={LANGUAGES.filter(l => l.code !== native?.code)}
+                  selected={target}
+                  onSelect={setTarget}
+                />
+              </div>
+              <p className={`text-xs mb-3 text-center ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
+                One language at a time — you can add more later from My Languages.
+              </p>
+              <div className="flex gap-2">
+                <Button onClick={() => setStep(1)} variant="ghost" className="px-4">←</Button>
+                <Button
+                  onClick={startJourney}
+                  disabled={!target}
+                  className="flex-1 text-lg py-3 shadow-lg font-bold tracking-wide"
+                >
+                  {t('home.startAdventure')}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

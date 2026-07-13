@@ -103,7 +103,7 @@ interface Correction {
 }
 
 export const ChatView: React.FC = () => {
-    const { sourceLang, targetLang, addXp, unlockAchievement, setError, updateQuestProgress, setCustomQuiz, setView, isHighContrast, currentScenario, addMistake, activeNodeId, completeNode } = useAppContext();
+    const { sourceLang, targetLang, addXp, unlockAchievement, setError, updateQuestProgress, setCustomQuiz, setView, isHighContrast, currentScenario, addMistake, activeNodeId, completeNode, profile } = useAppContext();
     const { t } = useLocalization();
     const [chatSession, setChatSession] = useState<ChatSession | null>(null);
     const [history, setHistory] = useState<ChatMessage[]>([]);
@@ -119,7 +119,7 @@ export const ChatView: React.FC = () => {
     useEffect(() => {
         setHistory([]);
         setCorrections([]);
-        const session = createChatSession(sourceLang, targetLang);
+        const session = createChatSession(sourceLang, targetLang, profile.learnerProfile);
         setChatSession(session);
         unlockAchievement('polyglot');
 

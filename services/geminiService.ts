@@ -1,5 +1,6 @@
-import type { Language, QuizQuestion, DarijaText, SkillTree, CulturalNugget, SkillNode, Mistake, QuizText, SagaMap, MapNode, MapBiome, Episode, Scenario, SubLesson, TrainingCategory } from '../types';
+import type { Language, QuizQuestion, DarijaText, SkillTree, CulturalNugget, SkillNode, Mistake, QuizText, SagaMap, MapNode, MapBiome, Episode, Scenario, SubLesson, TrainingCategory, LearnerProfile, SelfAssessedLevel, PlacementTest, PlacementQuestion, PlacementSkill, CefrLevel, WritingPrompt, WritingGrade } from '../types';
 import { generateContent } from './geminiProxy';
+import { BANDS_FOR_SELF_ASSESSED, CEFR_LADDER, CEFR_LABELS, MCQ_COUNT, WRITING_COUNT } from '../utils/placement';
 
 // Single model for all text generation: flash-lite is ~6x cheaper than flash
 // ($0.25/M in, $1.50/M out) and handles this app's structured-JSON workloads.
@@ -26,6 +27,28 @@ export const parseDarijaResponse = (text: string): DarijaText => {
   return { arabic: text, latin: '(transliteration not available)' };
 };
 
+// --- LEARNER CONTEXT ---
+// Every generator prepends this block so content tracks the user's placement
+// result and live progress instead of a generic "beginner".
+
+export const buildLearnerContext = (lp?: LearnerProfile | null): string => {
+  if (!lp) return '';
+  const lines = [
+    'LEARNER PROFILE (adapt everything you generate to it):',
+    `- Proficiency: CEFR ${lp.cefr} (${CEFR_LABELS[lp.cefr]}). Pitch difficulty at this level — not easier, not harder.`,
+  ];
+  if (lp.interests.length > 0) {
+    lines.push(`- Interests: ${lp.interests.join(', ')}. Theme examples, scenarios and stories around these whenever natural.`);
+  }
+  if (lp.weakAreas.length > 0) {
+    lines.push(`- Weak areas: ${lp.weakAreas.join(', ')}. Weave in extra practice on these.`);
+  }
+  if (lp.strongAreas.length > 0) {
+    lines.push(`- Strong areas: ${lp.strongAreas.join(', ')}. Don't over-drill these; use them as stepping stones.`);
+  }
+  return lines.join('\n');
+};
+
 // --- STRICT QUIZ IMPLEMENTATION ---
 
 interface StrictQuizQuestion {
@@ -33,6 +56,7 @@ interface StrictQuizQuestion {
   choices: string[];
   correctIndex: number;
   explanation: string;
+  topic: string;
 }
 
 const getStrictQuizSchema = () => ({
@@ -50,9 +74,10 @@ const getStrictQuizSchema = () => ({
             description: "Array of 4 options in the target language."
           },
           correctIndex: { type: Type.INTEGER, description: "Index of the correct answer (0-3)." },
-          explanation: { type: Type.STRING, description: "Brief explanation in native language (max 25 words)." }
+          explanation: { type: Type.STRING, description: "Brief explanation in native language (max 25 words)." },
+          topic: { type: Type.STRING, description: "1-3 word topic label in English (e.g. 'past tense', 'food vocabulary')." }
         },
-        required: ['question', 'choices', 'correctIndex', 'explanation']
+        required: ['question', 'choices', 'correctIndex', 'explanation', 'topic']
       }
     }
   },
@@ -69,7 +94,8 @@ const mapStrictQuestionToQuizQuestion = (q: StrictQuizQuestion, isDarija: boolea
     question: q.question, // Question is always in native language (string)
     options: q.choices.map(parseText),
     correctAnswer: parseText(q.choices[q.correctIndex]),
-    explanation: q.explanation
+    explanation: q.explanation,
+    topic: q.topic
   };
 };
 
@@ -117,7 +143,8 @@ REQUIRED JSON FORMAT:
       "question": "string",
       "choices": ["string", "string", "string", "string"],
       "correctIndex": 0,
-      "explanation": "string"
+      "explanation": "string",
+      "topic": "string (1-3 word English label of what the question tests, e.g. 'past tense')"
     }
   ]
 }
@@ -182,13 +209,14 @@ const getAvoidRepeatsClause = (langCode: string): string => {
 
 // --- EXPORTED FUNCTIONS ---
 
-export const generateQuiz = async (sourceLang: Language, targetLang: Language, userLevel: number = 1, count: number = 5): Promise<QuizQuestion[]> => {
+export const generateQuiz = async (sourceLang: Language, targetLang: Language, userLevel: number = 1, count: number = 5, learnerProfile?: LearnerProfile | null): Promise<QuizQuestion[]> => {
   console.log(`Generating Quiz for Level: ${userLevel} (${count} questions)`);
   const isDarija = targetLang.code === 'ary';
 
   const prompt = `
     Generate ${count} multiple-choice questions for learning ${targetLang.name}.
     User Level: ${userLevel} (1=Beginner, 20=Advanced).
+    ${buildLearnerContext(learnerProfile)}
     Focus themes for THIS quiz: ${pickQuizTopics().join(', ')}.
     Mix question styles: direct translation, fill-in-the-blank sentences, and "how would you say…" situations.
     ${getAvoidRepeatsClause(targetLang.code)}
@@ -252,9 +280,12 @@ Example(User says "Ana mshi" - incorrect grammar):
 }
 `;
 
-const getStandardChatSystemInstruction = (sourceLang: Language, targetLang: Language) => `
+const getStandardChatSystemInstruction = (sourceLang: Language, targetLang: Language, learnerProfile?: LearnerProfile | null) => `
 You are a friendly language tutor for ${targetLang.name}.
-Your student is a beginner.Engage in a simple, practical conversation in ${targetLang.name}.
+${learnerProfile
+    ? `${buildLearnerContext(learnerProfile)}
+Match your vocabulary and sentence complexity to the student's CEFR level, and steer the conversation toward their interests.`
+    : 'Your student is a beginner.'} Engage in a simple, practical conversation in ${targetLang.name}.
 
 STRICT IMMERSION RULES:
 1. ** Chat Language **: You must ONLY speak in ${targetLang.name}. NEVER speak English in the "reply" field.
@@ -276,10 +307,10 @@ export interface ChatSession {
   sendMessage: (args: { message: string }) => Promise<{ text: string }>;
 }
 
-export const createChatSession = (sourceLang: Language, targetLang: Language): ChatSession => {
+export const createChatSession = (sourceLang: Language, targetLang: Language, learnerProfile?: LearnerProfile | null): ChatSession => {
   const systemInstruction = targetLang.code === 'ary'
     ? getDarijaChatSystemInstruction(sourceLang)
-    : getStandardChatSystemInstruction(sourceLang, targetLang);
+    : getStandardChatSystemInstruction(sourceLang, targetLang, learnerProfile);
 
   const config = {
     systemInstruction,
@@ -411,12 +442,14 @@ const getSkillTreeSchema = () => ({
   required: ['skill_tree'],
 });
 
-const getSkillTreePrompt = (sourceLang: Language, targetLang: Language, userLevel: number) => {
+const getSkillTreePrompt = (sourceLang: Language, targetLang: Language, userLevel: number, learnerProfile?: LearnerProfile | null) => {
   const isDarija = targetLang.code === 'ary';
   return `
 You are an expert AI Language Curriculum Designer for a gamified app called LingoFlow.
 Your task is to create a structured and personalized Skill Tree for a ${sourceLang.name} speaker learning ${targetLang.name}.
 The user is currently at Level ${userLevel}.
+${buildLearnerContext(learnerProfile)}
+${learnerProfile ? `Skills the placement test found weak deserve their own early nodes; content_examples should draw on the learner's interests where the topic allows.` : ''}
 
 RULES:
 1.  The curriculum must be structured as a "Skill Tree" with thematic "Skill Branches"(e.g., "Greetings & Basics", "Food & Dining").
@@ -436,8 +469,8 @@ Provide the output ONLY in the specified JSON format.
 };
 
 
-export const generateSkillTree = async (sourceLang: Language, targetLang: Language, userLevel: number): Promise<SkillTree> => {
-  const prompt = getSkillTreePrompt(sourceLang, targetLang, userLevel);
+export const generateSkillTree = async (sourceLang: Language, targetLang: Language, userLevel: number, learnerProfile?: LearnerProfile | null): Promise<SkillTree> => {
+  const prompt = getSkillTreePrompt(sourceLang, targetLang, userLevel, learnerProfile);
 
   try {
     const response = await generateContent({
@@ -637,23 +670,43 @@ const getSagaMapSchema = () => ({
 export const generateSagaMap = async (
   sourceLang: Language,
   targetLang: Language,
-  userLevel: number
+  userLevel: number,
+  learnerProfile?: LearnerProfile | null
 ): Promise<SagaMap> => {
   const isDarija = targetLang.code === 'ary';
-  const prompt = `
-    You are a Fantasy Cartographer and Language Curriculum Designer.
-    Create a "Saga Map" for a user learning ${targetLang.name} (Level ${userLevel}).
-    
+
+  // Learners who placed above A1 get a roadmap that starts at their band
+  // instead of the alphabet.
+  const cefr = learnerProfile?.cefr ?? 'A1';
+  const nextBand = CEFR_LADDER[Math.min(CEFR_LADDER.indexOf(cefr) + 1, CEFR_LADDER.length - 1)];
+  const progressionBlock = cefr === 'A1'
+    ? `
     Generate 5 "Cities"(Major Milestones) that guide the user from ABSOLUTE BEGINNER(A0) to BEGINNER(A1).
-    
+
     STRICT PROGRESSION:
 - City 1: "The Awakening" - Topics: Alphabet / Script, Basic Sounds, Yes / No, Hello / Goodbye.
     - City 2: "The First Words" - Topics: Numbers(1 - 10), Colors, Common Objects(Book, Pen, Door).
     - City 3: "The Social Circle" - Topics: Personal Pronouns(I, You), Family Members, Introductions("My name is...").
     - City 4: "The Marketplace" - Topics: Food Basics(Bread, Water), Simple Questions(What is this ?, How much ?), Politeness.
-    - City 5: "The Journey Begins" - Topics: Basic Verbs(Go, Eat, Drink), Present Tense Basics, Directions(Left, Right).
+    - City 5: "The Journey Begins" - Topics: Basic Verbs(Go, Eat, Drink), Present Tense Basics, Directions(Left, Right).`
+    : `
+    ${buildLearnerContext(learnerProfile)}
+
+    Generate 5 "Cities"(Major Milestones) that guide the user from ${cefr} to ${nextBand}.
+
+    STRICT PROGRESSION:
+    - City 1 starts at solid ${cefr} material: consolidate what a ${cefr} learner already half-knows${learnerProfile && learnerProfile.weakAreas.length > 0 ? `, opening with their weak areas (${learnerProfile.weakAreas.join(', ')})` : ''}.
+    - Cities 2-4 climb steadily through the gap between ${cefr} and ${nextBand}: richer tenses, connectors, real conversations, longer reading.
+    - City 5 lands at entry-level ${nextBand} material.
+    - Never include alphabet, "hello/goodbye" or other absolute-beginner topics — this learner is past them.`;
+
+  const prompt = `
+    You are a Fantasy Cartographer and Language Curriculum Designer.
+    Create a "Saga Map" for a user learning ${targetLang.name} (Level ${userLevel}).
+    ${progressionBlock}
 
     - The names of the cities should be evocative and fantasy - themed but reflect these learning stages.
+    ${learnerProfile && learnerProfile.interests.length > 0 ? `- Flavor the cities' lore around the learner's interests: ${learnerProfile.interests.join(', ')}.` : ''}
     - IMPORTANT: 'title' and 'description' must be in ${targetLang.name}.
     - IMPORTANT: 'titleNative' and 'descriptionNative' must be in ${sourceLang.name} ONLY. Do NOT include ${targetLang.name} or Arabic script in these fields.
     - QUALITY CONTROL: Ensure all ${targetLang.name} text is grammatically correct and uses authentic vocabulary. Do NOT invent words.
@@ -748,11 +801,13 @@ export const generateSagaMap = async (
 export const generateQuizFromTopics = async (
   topics: string[],
   sourceLang: Language,
-  targetLang: Language
+  targetLang: Language,
+  learnerProfile?: LearnerProfile | null
 ): Promise<QuizQuestion[]> => {
   const isDarija = targetLang.code === 'ary';
   const prompt = `
     Generate a quiz with 5 questions for a language learner.
+    ${buildLearnerContext(learnerProfile)}
     Topics: ${topics.join(', ')}
     The questions should test vocabulary and phrases related to the provided topics.
 
@@ -789,25 +844,197 @@ export const generateMistakeReviewQuiz = async (
   return _generateQuizInternal(prompt, isDarija);
 };
 
-export const generatePlacementQuiz = async (
-  sourceLang: Language,
-  targetLang: Language
-): Promise<QuizQuestion[]> => {
-  const isDarija = targetLang.code === 'ary';
-  const prompt = `
-    Create a 10-question placement test for a ${sourceLang.name} speaker learning ${targetLang.name}.
-    The difficulty MUST ramp steadily:
-    - Questions 1-2: absolute beginner (A1) — basic greetings, simple vocabulary.
-    - Questions 3-4: elementary (A2) — everyday phrases, simple present tense.
-    - Questions 5-6: intermediate (B1) — past/future tenses, common idioms.
-    - Questions 7-8: upper-intermediate (B2) — nuanced word choice, complex grammar.
-    - Questions 9-10: advanced (C1) — subtle distinctions, formal register, rare vocabulary.
-    Exactly 10 questions, each with 4 choices.
+// --- PLACEMENT TEST ---
+// One generation call produces the whole test: tagged MCQs across the CEFR
+// bands around the learner's self-assessment, plus free-writing prompts.
 
-    ${getStrictRules(sourceLang, targetLang, isDarija)}
+const getPlacementSchema = () => ({
+  type: Type.OBJECT,
+  properties: {
+    mcq: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          question: { type: Type.STRING, description: "The question, in the learner's native language. For reading questions, include the target-language passage inside the question." },
+          choices: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Exactly 4 options in the target language." },
+          correctIndex: { type: Type.INTEGER, description: "Index of the correct answer (0-3)." },
+          skill: { type: Type.STRING, description: "One of: vocabulary, grammar, reading." },
+          cefr: { type: Type.STRING, description: "CEFR band of this question: A1, A2, B1, B2, or C1." },
+          explanation: { type: Type.STRING, description: "Brief explanation in the native language (max 25 words)." },
+          topic: { type: Type.STRING, description: "1-3 word English topic label (e.g. 'past tense')." },
+        },
+        required: ['question', 'choices', 'correctIndex', 'skill', 'cefr', 'explanation', 'topic'],
+      },
+    },
+    writing: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          prompt: { type: Type.STRING, description: "A writing task in the learner's native language asking them to write 1-3 sentences in the target language." },
+          cefr: { type: Type.STRING, description: "CEFR band of this task." },
+          guidance: { type: Type.STRING, description: "One short hint in the native language about what to include." },
+        },
+        required: ['prompt', 'cefr', 'guidance'],
+      },
+    },
+  },
+  required: ['mcq', 'writing'],
+});
+
+const asCefr = (value: string, fallback: CefrLevel): CefrLevel =>
+  (CEFR_LADDER as string[]).includes(value) ? (value as CefrLevel) : fallback;
+
+const asSkill = (value: string): PlacementSkill =>
+  value === 'grammar' || value === 'reading' ? value : 'vocabulary';
+
+export const generatePlacementTest = async (
+  sourceLang: Language,
+  targetLang: Language,
+  selfAssessed: SelfAssessedLevel
+): Promise<PlacementTest> => {
+  const isDarija = targetLang.code === 'ary';
+  const bands = BANDS_FOR_SELF_ASSESSED[selfAssessed];
+  const perBand = Math.floor(MCQ_COUNT / bands.length);
+  const remainder = MCQ_COUNT - perBand * bands.length;
+  const distribution = bands
+    .map((band, i) => `${perBand + (i < remainder ? 1 : 0)} questions at ${band}`)
+    .join(', ');
+
+  const prompt = `
+    Create a placement test for a ${sourceLang.name} speaker learning ${targetLang.name}.
+    The learner estimates their own level as: ${selfAssessed}.
+
+    PART 1 — exactly ${MCQ_COUNT} multiple-choice questions:
+    - Band distribution (MUST match exactly): ${distribution}.
+    - Skill distribution: 7 'vocabulary', 7 'grammar', 7 'reading' — spread each skill across all bands.
+    - 'reading' questions: include a short ${targetLang.name} passage (1-3 sentences) inside the question, then ask a comprehension question about it in ${sourceLang.name}.
+    - 'vocabulary' and 'grammar' questions: written in ${sourceLang.name}, with the 4 answer choices in ${targetLang.name}.
+    - Order the questions from easiest band to hardest band.
+    - Tag every question with its exact 'skill' and 'cefr'.
+
+    PART 2 — exactly ${WRITING_COUNT} short writing tasks:
+    - One at the lowest tested band (${bands[0]}), one mid-range, one at the highest (${bands[bands.length - 1]}).
+    - Each asks the learner (in ${sourceLang.name}) to write 1-3 sentences in ${targetLang.name} about an everyday situation.
+
+    RULES:
+    1. Questions, explanations, writing prompts and guidance are in ${sourceLang.name}.
+    2. Answer choices are in ${targetLang.name}. Only one correct answer. No invented or misspelled words.
+    3. Output ONLY valid JSON matching the schema.
+    ${isDarija ? `4. SPECIAL DARIJA RULE: all Darija text (choices, passages) MUST carry both Arabic script and Latin transliteration in this exact format: "Arabic (Latin)" e.g. "سلام (salam)".` : ''}
   `;
 
-  return _generateQuizInternal(prompt, isDarija);
+  const response = await generateContent({
+    model: TEXT_MODEL,
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: getPlacementSchema(),
+      temperature: 0.7,
+    },
+  });
+
+  const data = JSON.parse(response.text.trim());
+  const parseText = (text: string): QuizText => (isDarija ? parseDarijaResponse(text) : text);
+
+  const mcq: PlacementQuestion[] = (data.mcq || [])
+    .filter((q: any) => Array.isArray(q.choices) && q.choices.length >= 2
+      && q.correctIndex >= 0 && q.correctIndex < q.choices.length)
+    .map((q: any): PlacementQuestion => ({
+      question: q.question,
+      options: q.choices.map(parseText),
+      correctAnswer: parseText(q.choices[q.correctIndex]),
+      explanation: q.explanation,
+      topic: q.topic,
+      skill: asSkill(q.skill),
+      cefr: asCefr(q.cefr, bands[0]),
+    }));
+  // Keep the promised easy→hard ramp even if the model shuffled bands.
+  mcq.sort((a, b) => CEFR_LADDER.indexOf(a.cefr) - CEFR_LADDER.indexOf(b.cefr));
+
+  const writing: WritingPrompt[] = (data.writing || []).slice(0, WRITING_COUNT).map((w: any) => ({
+    prompt: w.prompt,
+    cefr: asCefr(w.cefr, bands[0]),
+    guidance: w.guidance ?? '',
+  }));
+
+  if (mcq.length < 10) throw new Error('Placement test came back too short.');
+  return { mcq, writing };
+};
+
+const getWritingGradesSchema = () => ({
+  type: Type.OBJECT,
+  properties: {
+    grades: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          score: { type: Type.INTEGER, description: "0-5. 0=empty/unintelligible, 3=understandable with errors, 5=natural and correct." },
+          feedback: { type: Type.STRING, description: "One encouraging sentence in the learner's native language." },
+        },
+        required: ['score', 'feedback'],
+      },
+    },
+  },
+  required: ['grades'],
+});
+
+/**
+ * Grades the free-writing answers 0-5 each. Empty answers are scored 0
+ * locally and never sent to the model.
+ */
+export const gradeWriting = async (
+  tasks: { prompt: string; answer: string }[],
+  sourceLang: Language,
+  targetLang: Language
+): Promise<WritingGrade[]> => {
+  const grades: WritingGrade[] = tasks.map(() => ({ score: 0, feedback: 'No answer given.' }));
+  const toGrade = tasks
+    .map((t, index) => ({ ...t, index }))
+    .filter(t => t.answer.trim().length > 0);
+  if (toGrade.length === 0) return grades;
+
+  const answersText = toGrade
+    .map((t, i) => `Task ${i + 1}: "${t.prompt}"\nLearner's answer (${targetLang.name}): "${t.answer.trim()}"`)
+    .join('\n\n');
+
+  const prompt = `
+    You are grading a ${targetLang.name} placement test's writing section for a ${sourceLang.name} speaker.
+    Grade each answer 0-5:
+    - 0: empty, not in ${targetLang.name}, or unintelligible.
+    - 1-2: fragments, heavy errors that block understanding.
+    - 3: understandable despite clear errors.
+    - 4: mostly correct, minor slips.
+    - 5: natural, correct ${targetLang.name}.
+    Be strict: pasted ${sourceLang.name}, gibberish or off-task text scores 0.
+    Give one short, encouraging feedback sentence per answer in ${sourceLang.name}.
+    Return exactly ${toGrade.length} grades, in the same order as the tasks.
+
+    ${answersText}
+  `;
+
+  const response = await generateContent({
+    model: TEXT_MODEL,
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: getWritingGradesSchema(),
+      temperature: 0.2,
+    },
+  });
+
+  const data = JSON.parse(response.text.trim());
+  (data.grades || []).forEach((g: any, i: number) => {
+    if (i < toGrade.length) {
+      grades[toGrade[i].index] = {
+        score: Math.max(0, Math.min(5, Math.round(g.score ?? 0))),
+        feedback: g.feedback ?? '',
+      };
+    }
+  });
+  return grades;
 };
 // Episode Generation
 
@@ -850,7 +1077,8 @@ const getEpisodeSchema = (isDarija: boolean) => ({
 export const generateEpisode = async (
   node: MapNode,
   sourceLang: Language,
-  targetLang: Language
+  targetLang: Language,
+  learnerProfile?: LearnerProfile | null
 ): Promise<Episode> => {
   const isDarija = targetLang.code === 'ary';
   const prompt = `
@@ -859,6 +1087,7 @@ export const generateEpisode = async (
     Target Language: ${targetLang.name}.
     User Level: ${node.level}.
 Topics: ${node.topics?.join(', ') || 'General Adventure'}.
+    ${buildLearnerContext(learnerProfile)}
 
     Generate 3 "Scenarios" that the user must overcome using their language skills.
     
@@ -921,13 +1150,15 @@ Topics: ${node.topics?.join(', ') || 'General Adventure'}.
 export const generateSubLessons = async (
   skillNode: SkillNode,
   sourceLang: Language,
-  targetLang: Language
+  targetLang: Language,
+  learnerProfile?: LearnerProfile | null
 ): Promise<SubLesson[]> => {
   const isDarija = targetLang.code === 'ary';
 
   const prompt = `
 You are creating a structured learning curriculum for ${targetLang.name}.
 Based on this skill topic: "${skillNode.node_name}" - ${skillNode.objective}
+${buildLearnerContext(learnerProfile)}
 
 Generate 5-30 sub-lessons that break down this topic into bite-sized, sequential learning units.
 
@@ -1001,13 +1232,15 @@ Output JSON array format:
 export const generatePracticeQuizForSubLesson = async (
   subLesson: SubLesson,
   sourceLang: Language,
-  targetLang: Language
+  targetLang: Language,
+  learnerProfile?: LearnerProfile | null
 ): Promise<QuizQuestion[]> => {
   const isDarija = targetLang.code === 'ary';
   const topicsText = subLesson.topics.join(', ');
 
   const prompt = `
     Create a practice quiz for learning ${targetLang.name}.
+    ${buildLearnerContext(learnerProfile)}
     Topic: ${subLesson.title}
     Focus areas: ${topicsText}
     Difficulty: ${subLesson.difficulty === 1 ? 'Beginner' : subLesson.difficulty === 2 ? 'Intermediate' : 'Advanced'}

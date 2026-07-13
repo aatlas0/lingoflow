@@ -52,7 +52,7 @@ export const LightningRoundView = () => {
     const loadQuestions = useCallback(async () => {
         setIsLoading(true);
         try {
-            const newQuestions = await generateQuiz(sourceLang, targetLang, profile.level, BATCH_SIZE);
+            const newQuestions = await generateQuiz(sourceLang, targetLang, profile.level, BATCH_SIZE, profile.learnerProfile);
             setQuestions(newQuestions);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred.');
@@ -60,18 +60,18 @@ export const LightningRoundView = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [sourceLang, targetLang, profile.level, setError]);
+    }, [sourceLang, targetLang, profile.level, profile.learnerProfile, setError]);
 
     const prefetchMoreQuestions = useCallback(() => {
         if (isPrefetchingRef.current) return;
         isPrefetchingRef.current = true;
-        generateQuiz(sourceLang, targetLang, profile.level, BATCH_SIZE)
+        generateQuiz(sourceLang, targetLang, profile.level, BATCH_SIZE, profile.learnerProfile)
             .then(newQuestions => setQuestions(prev => [...prev, ...newQuestions]))
             // Never interrupt a running round over a failed top-up; the
             // round recycles earlier questions if it truly runs out.
             .catch(err => console.error('Lightning prefetch failed:', err))
             .finally(() => { isPrefetchingRef.current = false; });
-    }, [sourceLang, targetLang, profile.level]);
+    }, [sourceLang, targetLang, profile.level, profile.learnerProfile]);
 
     useEffect(() => {
         loadQuestions();
