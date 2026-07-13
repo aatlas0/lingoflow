@@ -6,18 +6,21 @@ import { AuthView } from './views/AuthView';
 import { LocalizationProvider, useLocalization } from './contexts/LocalizationContext';
 import { Header } from './components/layout/Header';
 import { AnimatedBackground } from './components/layout/AnimatedBackground';
-import { HomeView } from './views/HomeView';
-import { DashboardView } from './views/DashboardView';
-import { QuizView } from './views/QuizView';
-import { LightningRoundView } from './views/LightningRoundView';
-import { ChatView } from './views/ChatView';
-import { ProfileView } from './views/ProfileView';
-import { SagaMapView } from './views/SagaMapView';
-import { PlacementView } from './views/PlacementView';
-import { TrainingGroundsView } from './views/TrainingGroundsView';
-import { PracticeQuizView } from './views/PracticeQuizView';
-import { MyLanguagesView } from './views/MyLanguagesView';
 import { LevelUpModal } from './components/common/LevelUpModal';
+
+// Each view loads as its own chunk on first visit instead of shipping the
+// whole app in one bundle. AuthView stays static: it's the first paint.
+const HomeView = React.lazy(() => import('./views/HomeView').then(m => ({ default: m.HomeView })));
+const DashboardView = React.lazy(() => import('./views/DashboardView').then(m => ({ default: m.DashboardView })));
+const QuizView = React.lazy(() => import('./views/QuizView').then(m => ({ default: m.QuizView })));
+const LightningRoundView = React.lazy(() => import('./views/LightningRoundView').then(m => ({ default: m.LightningRoundView })));
+const ChatView = React.lazy(() => import('./views/ChatView').then(m => ({ default: m.ChatView })));
+const ProfileView = React.lazy(() => import('./views/ProfileView').then(m => ({ default: m.ProfileView })));
+const SagaMapView = React.lazy(() => import('./views/SagaMapView').then(m => ({ default: m.SagaMapView })));
+const PlacementView = React.lazy(() => import('./views/PlacementView').then(m => ({ default: m.PlacementView })));
+const TrainingGroundsView = React.lazy(() => import('./views/TrainingGroundsView').then(m => ({ default: m.TrainingGroundsView })));
+const PracticeQuizView = React.lazy(() => import('./views/PracticeQuizView').then(m => ({ default: m.PracticeQuizView })));
+const MyLanguagesView = React.lazy(() => import('./views/MyLanguagesView').then(m => ({ default: m.MyLanguagesView })));
 
 // Non-blocking toast: background failures (quests, translations…) used to
 // throw a full-screen overlay over whatever the user was doing.
@@ -116,7 +119,13 @@ const AppContent: React.FC = () => {
             */}
             <main className="flex-grow container mx-auto p-0 sm:p-0 lg:p-0 relative flex flex-col overflow-y-auto h-full">
                 <div className="w-full min-h-full flex flex-col">
-                    {renderView()}
+                    <React.Suspense fallback={
+                        <div className="flex-grow flex items-center justify-center">
+                            <div className="w-12 h-12 border-4 border-brand-turquoise/30 border-t-brand-turquoise rounded-full animate-spin"></div>
+                        </div>
+                    }>
+                        {renderView()}
+                    </React.Suspense>
                 </div>
             </main>
             <ErrorDisplay />

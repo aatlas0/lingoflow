@@ -457,10 +457,10 @@ export const ChatView: React.FC = () => {
                                 placeholder={t('chat.placeholder', { language: targetLang.name })}
                                 className={`flex-grow border-2 rounded-xl p-4 focus:ring-2 focus:ring-brand-turquoise focus:border-brand-turquoise shadow-inner transition-all
                                     ${isScenario
-                                        ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500'
+                                        ? 'bg-slate-800 border-slate-600 text-white placeholder:text-slate-500'
                                         : (isHighContrast
-                                            ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-500'
-                                            : 'bg-white border-desert-dark/50 text-dark-green placeholder-dark-green/40')}
+                                            ? 'bg-slate-800 border-slate-600 text-white placeholder:text-slate-500'
+                                            : 'bg-white border-desert-dark/50 text-dark-green placeholder:text-dark-green/40')}
                                 `}
                                 disabled={isLoading}
                             />

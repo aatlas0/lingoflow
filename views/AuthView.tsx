@@ -54,8 +54,8 @@ export const AuthView: React.FC = () => {
   const inputClasses = `
     w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:border-brand-turquoise transition-colors
     ${isHighContrast
-      ? 'border-slate-600 bg-slate-700/80 text-white placeholder-slate-500'
-      : 'border-desert-dark bg-white/80 text-dark-green placeholder-dark-green/30'}
+      ? 'border-slate-600 bg-slate-700/80 text-white placeholder:text-slate-500'
+      : 'border-desert-dark bg-white/80 text-dark-green placeholder:text-dark-green/30'}
   `;
 
   const labelClasses = `block text-sm font-bold mb-1 ${isHighContrast ? 'text-slate-200' : 'text-dark-green'}`;
