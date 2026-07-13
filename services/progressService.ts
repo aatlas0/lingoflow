@@ -117,6 +117,40 @@ export const fetchLanguageState = async (userId: string, targetLang: string): Pr
   };
 };
 
+// Erases a language's saved progress. True row deletion needs the policy in
+// supabase/migrations/20260713_delete_language_state.sql; on databases
+// without it (RLS silently deletes nothing) the row is reset to fresh
+// instead, so the progress is wiped either way.
+export const deleteLanguageState = async (
+  userId: string,
+  targetLang: string
+): Promise<'deleted' | 'reset' | 'error'> => {
+  const { data, error } = await getSupabase()
+    .from('language_state')
+    .delete()
+    .eq('user_id', userId)
+    .eq('target_lang', targetLang)
+    .select('target_lang');
+
+  if (!error && (data?.length ?? 0) > 0) return 'deleted';
+  if (error) console.error('Failed to delete language state:', error.message);
+
+  const { error: resetError } = await getSupabase().from('language_state').upsert({
+    user_id: userId,
+    target_lang: targetLang,
+    skill_tree: null,
+    saga_map: null,
+    progress: FRESH_LANGUAGE_PROGRESS,
+    updated_at: new Date().toISOString(),
+  });
+
+  if (resetError) {
+    console.error('Failed to reset language state:', resetError.message);
+    return 'error';
+  }
+  return 'reset';
+};
+
 export interface LanguageProgressSummary {
   langCode: string;
   progress: LanguageProgress;

@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useAuth } from './AuthContext';
-import { fetchProfile, saveProfile, fetchLanguageState, saveLanguageState, extractProgress, FRESH_LANGUAGE_PROGRESS } from '../services/progressService';
+import { fetchProfile, saveProfile, fetchLanguageState, saveLanguageState, deleteLanguageState, extractProgress, FRESH_LANGUAGE_PROGRESS } from '../services/progressService';
 import type { Language, UserProfile, AppView, Quest, QuestType, QuizQuestion, SkillTree, SkillNode, NodeState, SagaMap, MapNode, Scenario, Mistake, SubLesson } from '../types';
 import { LANGUAGES } from '../constants/languages';
 import { ACHIEVEMENTS } from '../constants/achievements';
@@ -15,6 +15,8 @@ interface AppContextType {
   profile: UserProfile;
   updateProfile: (updates: Partial<UserProfile>) => void;
   isHydrating: boolean;
+  /** Permanently erases one language's saved progress. Returns false on failure. */
+  deleteLanguageProgress: (langCode: string) => Promise<boolean>;
   addXp: (amount: number) => void;
   completeQuiz: () => void;
   updateHighScore: (score: number) => void;
@@ -444,6 +446,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     newAchievements.forEach(showAchievementToast);
   }, [rawUnlockAchievement, showAchievementToast]);
 
+  const deleteLanguageProgress = useCallback(async (langCode: string): Promise<boolean> => {
+    if (!user) return false;
+    const result = await deleteLanguageState(user.id, langCode);
+    if (result === 'error') return false;
+
+    try {
+      localStorage.removeItem(`recentQuestions-${langCode}`);
+      localStorage.removeItem(`placementDismissed-${langCode}`);
+    } catch { /* ignore */ }
+
+    // If the wiped language is on screen, reset the live state too —
+    // otherwise the debounced saver writes the old numbers right back.
+    if (latestStateRef.current.targetLang.code === langCode) {
+      updateProfile({ ...FRESH_LANGUAGE_PROGRESS, mistakes: [], completedSubLessons: [] });
+      previousLevelRef.current = 1;
+      setSkillTreeState(null);
+      setSagaMapState(null);
+      try {
+        localStorage.removeItem('skillTree');
+        localStorage.removeItem('sagaMap');
+      } catch { /* ignore */ }
+    }
+    return true;
+  }, [user, updateProfile]);
+
   const setSourceLang = useCallback((lang: Language) => {
     setSourceLangState(lang);
     updateProfile({ sourceLangCode: lang.code });
@@ -476,6 +503,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     profile,
     updateProfile,
     isHydrating,
+    deleteLanguageProgress,
     addXp,
     completeQuiz,
     updateHighScore,
@@ -515,6 +543,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     profile,
     updateProfile,
     isHydrating,
+    deleteLanguageProgress,
     addXp,
     completeQuiz,
     updateHighScore,
