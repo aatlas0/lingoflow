@@ -13,8 +13,11 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(geminiKey),
-        'process.env.GEMINI_API_KEY': JSON.stringify(geminiKey)
+        // The key is injected ONLY into dev builds (npm run dev calls Google
+        // directly). Production traffic goes through /api/gemini, where the
+        // key lives server-side — never ship it in the bundle.
+        'process.env.API_KEY': JSON.stringify(mode === 'development' ? geminiKey : ''),
+        'process.env.GEMINI_API_KEY': JSON.stringify(mode === 'development' ? geminiKey : '')
       },
       resolve: {
         alias: {

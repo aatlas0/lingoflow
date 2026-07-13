@@ -1,23 +1,5 @@
 
-import { GoogleGenAI, Modality } from "@google/genai";
-
-const API_KEY = process.env.API_KEY;
-if (!API_KEY) {
-  console.warn("API_KEY environment variable not set. Please set it to use TTS.");
-}
-
-// Lazy init: constructing GoogleGenAI without a key throws in the browser,
-// and at module scope that would blank the entire app on load.
-let _ai: GoogleGenAI | null = null;
-const getAi = (): GoogleGenAI => {
-  if (!_ai) {
-    if (!API_KEY) {
-      throw new Error("Gemini API key is not configured. Set GEMINI_API_KEY and rebuild the app.");
-    }
-    _ai = new GoogleGenAI({ apiKey: API_KEY });
-  }
-  return _ai;
-};
+import { generateContent } from './geminiProxy';
 
 // --- Browser speech synthesis (free) ---
 
@@ -106,11 +88,11 @@ const getAudioContext = (): AudioContext => {
 };
 
 const playWithGemini = async (text: string): Promise<void> => {
-  const response = await getAi().models.generateContent({
+  const response = await generateContent({
     model: "gemini-3.1-flash-tts-preview",
     contents: [{ parts: [{ text: text }] }],
     config: {
-      responseModalities: [Modality.AUDIO],
+      responseModalities: ['AUDIO'],
       speechConfig: {
         voiceConfig: {
           prebuiltVoiceConfig: { voiceName: 'Kore' }, // A pleasant, neutral voice
@@ -119,7 +101,7 @@ const playWithGemini = async (text: string): Promise<void> => {
     },
   });
 
-  const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  const base64Audio = response.parts?.[0]?.inlineData?.data;
   if (base64Audio) {
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') {

@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import { useLocalization } from '../contexts/LocalizationContext';
-import { createChatSession, parseDarijaResponse, generateCulturalNuggets } from '../services/geminiService';
+import { createChatSession, parseDarijaResponse, generateCulturalNuggets, type ChatSession } from '../services/geminiService';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { CulturalNuggetCard } from '../components/common/CulturalNuggetCard';
 import type { ChatMessage, QuizText, DarijaText, CulturalNugget, Scenario } from '../types';
-import type { Chat } from '@google/genai';
 import { XP_GAINS } from '../constants/achievements';
 
 const isDarijaText = (text: QuizText | string | CulturalNugget): text is DarijaText => {
@@ -106,7 +105,7 @@ interface Correction {
 export const ChatView: React.FC = () => {
     const { sourceLang, targetLang, addXp, unlockAchievement, setError, updateQuestProgress, setCustomQuiz, setView, isHighContrast, currentScenario, addMistake, activeNodeId, completeNode } = useAppContext();
     const { t } = useLocalization();
-    const [chatSession, setChatSession] = useState<Chat | null>(null);
+    const [chatSession, setChatSession] = useState<ChatSession | null>(null);
     const [history, setHistory] = useState<ChatMessage[]>([]);
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);

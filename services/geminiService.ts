@@ -1,27 +1,20 @@
-import { GoogleGenAI, Type, GenerateContentResponse, Chat } from "@google/genai";
 import type { Language, QuizQuestion, DarijaText, SkillTree, CulturalNugget, SkillNode, Mistake, QuizText, SagaMap, MapNode, MapBiome, Episode, Scenario, SubLesson, TrainingCategory } from '../types';
-
-const API_KEY = process.env.API_KEY;
-if (!API_KEY) {
-  console.warn("API_KEY environment variable not set. Please set it to use Gemini API.");
-}
+import { generateContent } from './geminiProxy';
 
 // Single model for all text generation: flash-lite is ~6x cheaper than flash
 // ($0.25/M in, $1.50/M out) and handles this app's structured-JSON workloads.
 const TEXT_MODEL = "gemini-3.1-flash-lite";
 
-// Lazy init: constructing GoogleGenAI without a key throws in the browser,
-// and at module scope that would blank the entire app on load.
-let _ai: GoogleGenAI | null = null;
-const getAi = (): GoogleGenAI => {
-  if (!_ai) {
-    if (!API_KEY) {
-      throw new Error("Gemini API key is not configured. Set GEMINI_API_KEY and rebuild the app.");
-    }
-    _ai = new GoogleGenAI({ apiKey: API_KEY });
-  }
-  return _ai;
-};
+// JSON-schema type names for responseSchema declarations. Mirrors the SDK's
+// Type enum — the SDK itself stays server-side (see api/gemini.ts).
+const Type = {
+  OBJECT: 'OBJECT',
+  ARRAY: 'ARRAY',
+  STRING: 'STRING',
+  INTEGER: 'INTEGER',
+  NUMBER: 'NUMBER',
+  BOOLEAN: 'BOOLEAN',
+} as const;
 
 // Helper to parse Darija responses which may not be perfect JSON
 export const parseDarijaResponse = (text: string): DarijaText => {
@@ -82,7 +75,7 @@ const mapStrictQuestionToQuizQuestion = (q: StrictQuizQuestion, isDarija: boolea
 
 const _generateQuizInternal = async (prompt: string, isDarija: boolean): Promise<QuizQuestion[]> => {
   try {
-    const response = await getAi().models.generateContent({
+    const response = await generateContent({
       model: TEXT_MODEL,
       contents: prompt,
       config: {
@@ -277,21 +270,38 @@ You must respond in JSON format with two fields:
    - "explanation": Brief explanation in ${sourceLang.name}.
 `;
 
-export const createChatSession = (sourceLang: Language, targetLang: Language): Chat => {
+// Chat runs over the proxy too: the SDK's Chat object is just sugar around
+// generateContent with an accumulated history, so we keep the history here.
+export interface ChatSession {
+  sendMessage: (args: { message: string }) => Promise<{ text: string }>;
+}
+
+export const createChatSession = (sourceLang: Language, targetLang: Language): ChatSession => {
   const systemInstruction = targetLang.code === 'ary'
     ? getDarijaChatSystemInstruction(sourceLang)
     : getStandardChatSystemInstruction(sourceLang, targetLang);
 
-  const chat = getAi().chats.create({
-    model: TEXT_MODEL,
-    config: {
-      systemInstruction: systemInstruction,
-      temperature: 0.7,
-      responseMimeType: "application/json",
-      responseSchema: getChatResponseSchema(),
+  const config = {
+    systemInstruction,
+    temperature: 0.7,
+    responseMimeType: "application/json",
+    responseSchema: getChatResponseSchema(),
+  };
+  const history: { role: 'user' | 'model'; parts: { text: string }[] }[] = [];
+
+  return {
+    async sendMessage({ message }) {
+      history.push({ role: 'user', parts: [{ text: message }] });
+      try {
+        const response = await generateContent({ model: TEXT_MODEL, contents: history, config });
+        history.push({ role: 'model', parts: [{ text: response.text }] });
+        return { text: response.text };
+      } catch (error) {
+        history.pop(); // failed turn shouldn't poison the history
+        throw error;
+      }
     },
-  });
-  return chat;
+  };
 };
 
 
@@ -342,7 +352,7 @@ Your task is to provide 3 - 5 short, engaging cultural insights(Cultural Nuggets
 export const generateCulturalNuggets = async (targetLang: Language): Promise<CulturalNugget[]> => {
   const prompt = getNuggetsPrompt(targetLang);
   try {
-    const response = await getAi().models.generateContent({
+    const response = await generateContent({
       model: TEXT_MODEL,
       contents: prompt,
       config: {
@@ -430,7 +440,7 @@ export const generateSkillTree = async (sourceLang: Language, targetLang: Langua
   const prompt = getSkillTreePrompt(sourceLang, targetLang, userLevel);
 
   try {
-    const response = await getAi().models.generateContent({
+    const response = await generateContent({
       model: TEXT_MODEL,
       contents: prompt,
       config: {
@@ -490,7 +500,7 @@ ${JSON.stringify(stringsToTranslate, null, 2)}
 `;
 
   try {
-    const response = await getAi().models.generateContent({
+    const response = await generateContent({
       model: TEXT_MODEL,
       contents: prompt,
       config: {
@@ -654,7 +664,7 @@ export const generateSagaMap = async (
     `;
 
   try {
-    const response = await getAi().models.generateContent({
+    const response = await generateContent({
       model: TEXT_MODEL,
       contents: prompt,
       config: {
@@ -871,7 +881,7 @@ Topics: ${node.topics?.join(', ') || 'General Adventure'}.
   `;
 
   try {
-    const response = await getAi().models.generateContent({
+    const response = await generateContent({
       model: TEXT_MODEL,
       contents: prompt,
       config: {
@@ -942,7 +952,7 @@ Output JSON array format:
   `;
 
   try {
-    const response = await getAi().models.generateContent({
+    const response = await generateContent({
       model: TEXT_MODEL,
       contents: prompt,
       config: {
