@@ -10,13 +10,12 @@ import { flagOf } from '../../constants/languages';
 export const Header = () => {
     const { isHighContrast, toggleHighContrast, profile, currentView, setView, targetLang } = useAppContext();
     const { username, signOut } = useAuth();
-    const { t: locT, forceNative, setForceNative, isTargetLanguageActive } = useLocalization();
+    const { t: locT } = useLocalization();
     const { immersionLevel, setImmersionLevel } = useImmersion();
 
     // The user requested the menu not appear in the beginning (Home view).
     if (currentView === 'home') return null;
 
-    const showLanguageToggle = profile.level > 20;
     // Show back button if we are NOT in home or dashboard
     const showBackButton = currentView !== 'home' && currentView !== 'dashboard';
 
@@ -112,19 +111,6 @@ export const Header = () => {
                                 </div>
                             );
                         })()}
-
-                        {showLanguageToggle && (
-                            <button
-                                onClick={() => setForceNative(!forceNative)}
-                                aria-pressed={!forceNative}
-                                title={isTargetLanguageActive ? locT('header.toggle.nativeLang') : locT('header.toggle.targetLang')}
-                                className={`p-2 rounded-full hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold text-xl
-                                    ${isHighContrast ? 'text-slate-300' : 'text-desert'}
-                                `}
-                            >
-                                {isTargetLanguageActive ? '🌐' : '🇬🇧'}
-                            </button>
-                        )}
 
                         <button
                             onClick={toggleHighContrast}

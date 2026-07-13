@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import { useImmersion } from '../contexts/ImmersionContext';
 import { generateSagaMap, generateQuizFromTopics } from '../services/geminiService';
+import { readAiCache, writeAiCache } from '../utils/aiCache';
 import type { MapNode, SagaMap } from '../types';
 import { CityEpisodeView } from './CityEpisodeView';
 import { effectiveStreak } from '../utils/streak';
@@ -214,15 +215,24 @@ export const SagaMapView = () => {
 
         setSelectedNode(node);
 
-        // If we already have an episode for this node in memory, use it? 
-        // For now, let's generate a new one if it's not the same as the last one
         if (currentEpisode?.nodeId === node.id) return;
+
+        // Episodes are expensive to generate — cache per node so revisiting
+        // (or bouncing between nodes) never re-bills a Gemini call. The title
+        // in the key invalidates the cache if the map is ever regenerated.
+        const cacheKey = `sagaEpisode-${targetLang.code}-${node.id}-${node.title}`;
+        const cached = readAiCache<any>(cacheKey);
+        if (cached) {
+            setCurrentEpisode(cached);
+            return;
+        }
 
         setIsLoadingEpisode(true);
         try {
             // Import dynamically to avoid circular dependency issues if any
             const { generateEpisode } = await import('../services/geminiService');
             const episode = await generateEpisode(node, sourceLang, targetLang);
+            writeAiCache(cacheKey, episode);
             setCurrentEpisode(episode);
         } catch (err) {
             console.error("Failed to generate episode", err);

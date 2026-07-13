@@ -23,6 +23,15 @@ const areTextsEqual = (a: QuizText, b: QuizText): boolean => {
 
 const GAME_DURATION = 60;
 
+const shuffle = <T,>(items: T[]): T[] => {
+    const result = [...items];
+    for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+};
+
 export const LightningRoundView = () => {
     const { sourceLang, targetLang, addXp, updateHighScore, profile, setError, isHighContrast } = useAppContext();
     const { t } = useLocalization();
@@ -96,6 +105,10 @@ export const LightningRoundView = () => {
             setError("No questions loaded. Please try again.");
             return;
         }
+        // Reshuffle so "Play Again" never replays the same order, and pull
+        // fresh questions in the background so replays aren't pure reruns.
+        setQuestions(prev => shuffle(prev));
+        if (gameState === 'finished') prefetchMoreQuestions();
         setScore(0);
         setCurrentQuestionIndex(0);
         setTimeLeft(GAME_DURATION);

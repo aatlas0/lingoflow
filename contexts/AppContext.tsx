@@ -6,6 +6,7 @@ import { fetchProfile, saveProfile, fetchLanguageState, saveLanguageState, delet
 import type { Language, UserProfile, AppView, Quest, QuestType, QuizQuestion, SkillTree, SkillNode, NodeState, SagaMap, MapNode, Scenario, Mistake, SubLesson } from '../types';
 import { LANGUAGES } from '../constants/languages';
 import { ACHIEVEMENTS } from '../constants/achievements';
+import { clearAiCacheForLanguage } from '../utils/aiCache';
 
 interface AppContextType {
   sourceLang: Language;
@@ -356,6 +357,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   const [dailyQuests, setDailyQuests] = useState<Quest[]>([]);
+  // Synchronous mirror of dailyQuests so back-to-back progress updates in the
+  // same render cycle see each other's writes (state alone would be stale).
+  const dailyQuestsRef = useRef<Quest[]>(dailyQuests);
+  useEffect(() => { dailyQuestsRef.current = dailyQuests; }, [dailyQuests]);
 
   // Load or generate quests on mount
   useEffect(() => {
@@ -409,18 +414,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   const updateQuestProgress = useCallback((type: QuestType, amount: number) => {
-    setDailyQuests(prev => prev.map(quest => {
+    // Award rewards outside the state updater: a side effect inside it
+    // double-fires under StrictMode and its achievements were never toasted.
+    const completed: Quest[] = [];
+    const next = dailyQuestsRef.current.map(quest => {
       if (quest.type === type && !quest.isClaimed && quest.progress < quest.target) {
         const newProgress = Math.min(quest.progress + amount, quest.target);
-        if (newProgress >= quest.target && quest.progress < quest.target) {
-          rawAddXp(quest.rewardXP);
-          return { ...quest, progress: newProgress, isClaimed: true };
-        }
-        return { ...quest, progress: newProgress };
+        if (newProgress >= quest.target) completed.push(quest);
+        return { ...quest, progress: newProgress, isClaimed: newProgress >= quest.target };
       }
       return quest;
-    }));
-  }, [rawAddXp]);
+    });
+    dailyQuestsRef.current = next;
+    setDailyQuests(next);
+
+    if (completed.length > 0) {
+      const rewardXP = completed.reduce((sum, quest) => sum + quest.rewardXP, 0);
+      const newAchievements = rawAddXp(rewardXP);
+      newAchievements.forEach(showAchievementToast);
+    }
+  }, [rawAddXp, showAchievementToast]);
 
 
 
@@ -455,6 +468,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       localStorage.removeItem(`recentQuestions-${langCode}`);
       localStorage.removeItem(`placementDismissed-${langCode}`);
     } catch { /* ignore */ }
+    clearAiCacheForLanguage(langCode);
 
     // If the wiped language is on screen, reset the live state too —
     // otherwise the debounced saver writes the old numbers right back.

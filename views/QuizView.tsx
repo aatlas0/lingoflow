@@ -60,7 +60,7 @@ export const QuizView = () => {
         addXp,
         unlockAchievement,
         setError,
-        updateQuestProgress,
+        completeQuiz,
         customQuiz,
         setCustomQuiz,
         setView,
@@ -100,10 +100,6 @@ export const QuizView = () => {
         }
     };
 
-    const completeQuiz = () => {
-        updateQuestProgress('quiz_complete', 1);
-    };
-
     useEffect(() => {
         loadQuestions();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,7 +133,7 @@ export const QuizView = () => {
                 }
             }, 100);
         }
-    }, [quizState, userAnswers, questions.length, addXp, updateQuestProgress]);
+    }, [quizState, userAnswers, questions.length, addXp, completeQuiz]);
 
     // Overdrive State
     const [isOverdriveActive, setIsOverdriveActive] = useState(false);

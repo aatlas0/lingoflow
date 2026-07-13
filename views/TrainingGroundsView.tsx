@@ -3,6 +3,7 @@ import { useAppContext } from '../contexts/AppContext';
 import { useLocalization } from '../contexts/LocalizationContext';
 import type { SkillTree, TrainingCategory, SubLesson } from '../types';
 import { generateSkillTree, generateSubLessons, generateQuizFromTopics } from '../services/geminiService';
+import { readAiCache, writeAiCache } from '../utils/aiCache';
 import { GlassCard } from '../components/common/GlassCard';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 
@@ -102,16 +103,25 @@ export const TrainingGroundsView: React.FC = () => {
 
                 // Use the first node as representative for now
                 const representativeNode = branch.nodes[0];
-                console.log(`Generating sub-lessons for ${category.name} using node: ${representativeNode.node_name}`);
 
-                const subLessons = await generateSubLessons(
-                    representativeNode,
-                    sourceLang,
-                    targetLang
-                );
+                // Sub-lessons are expensive to generate — cache per branch so
+                // reopening a category (or the whole view) reuses them. The
+                // node name in the key invalidates when the tree regenerates.
+                const cacheKey = `subLessons-${targetLang.code}-${category.name}-${representativeNode.node_name}`;
+                let subLessons = readAiCache<SubLesson[]>(cacheKey);
 
                 if (!subLessons || subLessons.length === 0) {
-                    throw new Error("Received empty sub-lessons from AI service");
+                    console.log(`Generating sub-lessons for ${category.name} using node: ${representativeNode.node_name}`);
+                    subLessons = await generateSubLessons(
+                        representativeNode,
+                        sourceLang,
+                        targetLang
+                    );
+
+                    if (!subLessons || subLessons.length === 0) {
+                        throw new Error("Received empty sub-lessons from AI service");
+                    }
+                    writeAiCache(cacheKey, subLessons);
                 }
 
                 // Update category with sub-lessons
