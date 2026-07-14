@@ -6,6 +6,7 @@ import { useLocalization } from '../../contexts/LocalizationContext';
 import { useImmersion } from '../../contexts/ImmersionContext';
 import { effectiveStreak } from '../../utils/streak';
 import { flagOf } from '../../constants/languages';
+import { Waves, Flame, Sun, Moon, LogOut } from 'lucide-react';
 
 export const Header = () => {
     const { isHighContrast, toggleHighContrast, profile, currentView, setView, targetLang } = useAppContext();
@@ -80,7 +81,7 @@ export const Header = () => {
                         className="hidden md:flex items-center gap-2 mx-4 bg-black/20 px-3 py-1 rounded-full"
                         title={`Immersion: how much of the adventure appears in ${targetLang.name}. It rises as you level up — adjust it any time.`}
                     >
-                        <span className={`text-xs font-bold uppercase ${isHighContrast ? 'text-teal-300' : 'text-gold'}`}>🌊 Immersion {immersionLevel}%</span>
+                        <span className={`flex items-center gap-1.5 text-xs font-bold uppercase ${isHighContrast ? 'text-teal-300' : 'text-gold'}`}><Waves className="w-3.5 h-3.5" strokeWidth={2} aria-hidden="true" /> Immersion {immersionLevel}%</span>
                         <input
                             type="range"
                             min="0"
@@ -106,7 +107,7 @@ export const Header = () => {
                                             : (isHighContrast ? 'bg-white/5 text-slate-500' : 'bg-black/20 text-desert/60')}
                                     `}
                                 >
-                                    <span className={streak > 0 ? '' : 'grayscale opacity-60'}>🔥</span>
+                                    <Flame className={`w-4 h-4 ${streak > 0 ? 'fill-current' : 'opacity-60'}`} strokeWidth={1.5} aria-hidden="true" />
                                     <span>{streak}</span>
                                 </div>
                             );
@@ -121,7 +122,7 @@ export const Header = () => {
                                 ${isHighContrast ? 'text-brand-turquoise' : 'text-desert'}
                             `}
                         >
-                            {isHighContrast ? '🌕' : '🌑'}
+                            {isHighContrast ? <Sun className="w-5 h-5" strokeWidth={1.5} aria-hidden="true" /> : <Moon className="w-5 h-5" strokeWidth={1.5} aria-hidden="true" />}
                         </button>
 
                         {username && (
@@ -132,11 +133,11 @@ export const Header = () => {
                         <button
                             onClick={() => signOut()}
                             title="Log out"
-                            className={`p-2 rounded-full hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold ml-1 text-xl
+                            className={`p-2 rounded-full hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold ml-1
                                 ${isHighContrast ? 'text-slate-300' : 'text-desert'}
                             `}
                         >
-                            🚪
+                            <LogOut className="w-5 h-5" strokeWidth={1.5} aria-hidden="true" />
                         </button>
                     </div>
                 </div>

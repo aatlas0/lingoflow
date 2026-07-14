@@ -9,6 +9,7 @@ import { SpeakerIcon } from '../components/common/SpeakerIcon';
 import type { QuizQuestion, UserAnswer, QuizText, DarijaText } from '../types';
 import { XP_GAINS } from '../constants/achievements';
 import { triggerWinConfetti } from '../utils/confetti';
+import { X, XCircle, CheckCircle2, Lightbulb, RotateCcw, Home } from 'lucide-react';
 
 const isDarijaText = (text: QuizText): text is DarijaText => {
     return text !== null && typeof text === 'object' && 'arabic' in text;
@@ -245,21 +246,21 @@ export const QuizView = () => {
                         {/* Performance Summary */}
                         <div className="flex justify-center gap-6 mb-8 text-lg">
                             <div className="flex items-center gap-2">
-                                <span className="text-2xl">✅</span>
+                                <CheckCircle2 className="w-6 h-6 text-brand-turquoise" strokeWidth={2} aria-hidden="true" />
                                 <span className="font-bold text-gold">{score} Correct</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-2xl">❌</span>
+                                <XCircle className="w-6 h-6 text-deep-red" strokeWidth={2} aria-hidden="true" />
                                 <span className="font-bold text-deep-red">{questions.length - score} Wrong</span>
                             </div>
                         </div>
 
                         <div className="flex flex-col gap-3">
-                            <Button onClick={loadQuestions} className="w-full py-4 text-lg font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all">
-                                🔄 Try Again
+                            <Button onClick={loadQuestions} className="w-full py-4 text-lg font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
+                                <RotateCcw className="w-5 h-5" strokeWidth={2} aria-hidden="true" /> Try Again
                             </Button>
-                            <Button onClick={() => setView('dashboard')} variant="secondary" className="w-full py-4 text-lg font-bold border-2">
-                                🏠 Dashboard
+                            <Button onClick={() => setView('dashboard')} variant="secondary" className="w-full py-4 text-lg font-bold border-2 flex items-center justify-center gap-2">
+                                <Home className="w-5 h-5" strokeWidth={2} aria-hidden="true" /> Dashboard
                             </Button>
                         </div>
                     </div>
@@ -293,7 +294,9 @@ export const QuizView = () => {
                                         <span className="text-brand-turquoise opacity-70">#{index + 1}</span>
                                         {getText(answer.question.question)}
                                     </p>
-                                    {answer.isCorrect ? <span className="text-2xl shrink-0">✅</span> : <span className="text-2xl shrink-0">❌</span>}
+                                    {answer.isCorrect
+                                        ? <CheckCircle2 className="w-6 h-6 shrink-0 text-brand-turquoise" strokeWidth={2} aria-label="Correct" />
+                                        : <XCircle className="w-6 h-6 shrink-0 text-deep-red" strokeWidth={2} aria-label="Incorrect" />}
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -311,7 +314,7 @@ export const QuizView = () => {
 
                                 {answer.question.explanation && (
                                     <div className={`p-3 rounded-xl border flex gap-3 ${isHighContrast ? 'bg-yellow-900/20 border-yellow-700/30 text-slate-300' : 'bg-gold/5 border-gold/10 text-dark-green'}`}>
-                                        <span className="text-lg shrink-0">💡</span>
+                                        <Lightbulb className="w-5 h-5 shrink-0 text-gold" strokeWidth={1.5} aria-hidden="true" />
                                         <p className="text-sm leading-relaxed opacity-90">{answer.question.explanation}</p>
                                     </div>
                                 )}
@@ -342,8 +345,8 @@ export const QuizView = () => {
             {/* Header / Progress */}
             <div className="shrink-0 flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4 flex-1">
-                    <Button onClick={() => setView('dashboard')} variant="ghost" className="text-dark-green hover:text-brand-turquoise">
-                        ❌
+                    <Button onClick={() => setView('dashboard')} variant="ghost" className="text-dark-green hover:text-brand-turquoise" aria-label="Exit quiz">
+                        <X className="w-5 h-5" strokeWidth={2} aria-hidden="true" />
                     </Button>
                     <div className="h-3 bg-gray-200 rounded-full flex-1 overflow-hidden">
                         <div

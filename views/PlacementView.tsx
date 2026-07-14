@@ -1,4 +1,10 @@
 import React, { useState } from 'react';
+import {
+    Sprout, Leaf, TreePine, Mountain, Target, Medal,
+    BookOpen, Puzzle, Eye, PenLine, Lightbulb,
+    FileText, Timer, TrendingUp, Map as MapIcon,
+    type LucideIcon,
+} from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
 import { generatePlacementTest, gradeWriting, generateSkillTree, generateSagaMap } from '../services/geminiService';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
@@ -38,11 +44,11 @@ const areTextsEqual = (a: QuizText, b: QuizText): boolean => {
     return false;
 };
 
-const SELF_ASSESSED_OPTIONS: { id: SelfAssessedLevel; title: string; blurb: string; emoji: string }[] = [
-    { id: 'new', title: 'Complete beginner', blurb: "I'm starting from zero.", emoji: '🌱' },
-    { id: 'elementary', title: 'Elementary', blurb: 'I know some words and simple phrases.', emoji: '🌿' },
-    { id: 'intermediate', title: 'Intermediate', blurb: 'I can handle everyday conversations.', emoji: '🌳' },
-    { id: 'advanced', title: 'Advanced', blurb: "I'm comfortable in most situations.", emoji: '🏔️' },
+const SELF_ASSESSED_OPTIONS: { id: SelfAssessedLevel; title: string; blurb: string; Icon: LucideIcon }[] = [
+    { id: 'new', title: 'Complete beginner', blurb: "I'm starting from zero.", Icon: Sprout },
+    { id: 'elementary', title: 'Elementary', blurb: 'I know some words and simple phrases.', Icon: Leaf },
+    { id: 'intermediate', title: 'Intermediate', blurb: 'I can handle everyday conversations.', Icon: TreePine },
+    { id: 'advanced', title: 'Advanced', blurb: "I'm comfortable in most situations.", Icon: Mountain },
 ];
 
 const CEFR_BLURBS: Record<CefrLevel, string> = {
@@ -53,11 +59,11 @@ const CEFR_BLURBS: Record<CefrLevel, string> = {
     C1: "Advanced — we'll keep the challenges coming.",
 };
 
-const SKILL_LABELS: { key: keyof SkillScores; label: string; emoji: string }[] = [
-    { key: 'vocabulary', label: 'Vocabulary', emoji: '📖' },
-    { key: 'grammar', label: 'Grammar', emoji: '🧩' },
-    { key: 'reading', label: 'Reading', emoji: '👀' },
-    { key: 'writing', label: 'Writing', emoji: '✍️' },
+const SKILL_LABELS: { key: keyof SkillScores; label: string; Icon: LucideIcon }[] = [
+    { key: 'vocabulary', label: 'Vocabulary', Icon: BookOpen },
+    { key: 'grammar', label: 'Grammar', Icon: Puzzle },
+    { key: 'reading', label: 'Reading', Icon: Eye },
+    { key: 'writing', label: 'Writing', Icon: PenLine },
 ];
 
 type Phase =
@@ -301,7 +307,7 @@ export const PlacementView: React.FC = () => {
                             onClick={() => { setSelfAssessed(option.id); setPhase('interests'); }}
                             className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-4 ${selfAssessed === option.id ? chipActive : chipBase}`}
                         >
-                            <span className="text-3xl">{option.emoji}</span>
+                            <option.Icon className={`w-8 h-8 shrink-0 ${selfAssessed === option.id ? '' : 'text-brand-turquoise'}`} strokeWidth={1.5} aria-hidden="true" />
                             <span>
                                 <span className="block font-bold">{option.title}</span>
                                 <span className={`block text-sm ${selfAssessed === option.id ? 'text-white/80' : subColor}`}>{option.blurb}</span>
@@ -361,15 +367,15 @@ export const PlacementView: React.FC = () => {
         return (
             <StepShell>
                 <p className={`text-xs font-bold uppercase tracking-widest mb-2 text-center ${subColor}`}>Step 3 of 3</p>
-                <div className="text-5xl text-center mb-4">🎯</div>
+                <div className="flex justify-center mb-4"><Target className="w-14 h-14 text-brand-turquoise" strokeWidth={1.5} aria-hidden="true" /></div>
                 <h1 className={`text-2xl md:text-3xl font-extrabold mb-4 text-center ${titleColor}`}>
                     Time to find your real level
                 </h1>
-                <ul className={`space-y-2 mb-6 text-sm md:text-base ${subColor}`}>
-                    <li className="flex gap-2"><span>📝</span><span>About 24 questions — vocabulary, grammar, reading and a bit of writing.</span></li>
-                    <li className="flex gap-2"><span>⏱️</span><span>Takes 10–15 minutes. No time pressure on any question.</span></li>
-                    <li className="flex gap-2"><span>📈</span><span>Questions get harder as you go. It's fine to get things wrong — that's the point.</span></li>
-                    <li className="flex gap-2"><span>🗺️</span><span>Your result builds a roadmap made just for you.</span></li>
+                <ul className={`space-y-2.5 mb-6 text-sm md:text-base ${subColor}`}>
+                    <li className="flex gap-2.5"><FileText className="w-5 h-5 shrink-0 mt-0.5 text-brand-turquoise" strokeWidth={1.5} aria-hidden="true" /><span>About 24 questions — vocabulary, grammar, reading and a bit of writing.</span></li>
+                    <li className="flex gap-2.5"><Timer className="w-5 h-5 shrink-0 mt-0.5 text-brand-turquoise" strokeWidth={1.5} aria-hidden="true" /><span>Takes 10–15 minutes. No time pressure on any question.</span></li>
+                    <li className="flex gap-2.5"><TrendingUp className="w-5 h-5 shrink-0 mt-0.5 text-brand-turquoise" strokeWidth={1.5} aria-hidden="true" /><span>Questions get harder as you go. It's fine to get things wrong — that's the point.</span></li>
+                    <li className="flex gap-2.5"><MapIcon className="w-5 h-5 shrink-0 mt-0.5 text-brand-turquoise" strokeWidth={1.5} aria-hidden="true" /><span>Your result builds a roadmap made just for you.</span></li>
                 </ul>
                 <Button onClick={startTest} className="w-full py-4 text-lg font-bold mb-3">Start the Test</Button>
                 <div className="flex justify-between items-center">
@@ -433,7 +439,7 @@ export const PlacementView: React.FC = () => {
         return (
             <div className="flex items-center justify-center min-h-full p-4 animate-fade-in">
                 <div className={`backdrop-blur-md rounded-3xl shadow-2xl border-2 p-6 md:p-10 max-w-xl w-full ${cardClasses}`}>
-                    <div className="text-6xl text-center mb-3">🏅</div>
+                    <div className="flex justify-center mb-3"><Medal className="w-16 h-16 text-gold" strokeWidth={1.5} aria-hidden="true" /></div>
                     <h1 className={`text-3xl md:text-4xl font-extrabold mb-1 text-center ${titleColor}`}>
                         You're {outcome.cefr} — {CEFR_LABELS[outcome.cefr]}
                     </h1>
@@ -448,8 +454,8 @@ export const PlacementView: React.FC = () => {
                         {SKILL_LABELS.map(skill => (
                             <div key={skill.key}>
                                 <div className={`flex justify-between text-sm font-bold mb-1 ${titleColor}`}>
-                                    <span>{skill.emoji} {skill.label}</span>
-                                    <span>{outcome.skillScores[skill.key]}%</span>
+                                    <span className="flex items-center gap-1.5"><skill.Icon className="w-4 h-4 text-brand-turquoise" strokeWidth={2} aria-hidden="true" /> {skill.label}</span>
+                                    <span className="tabular-nums">{outcome.skillScores[skill.key]}%</span>
                                 </div>
                                 <div className={`h-2.5 rounded-full overflow-hidden ${isHighContrast ? 'bg-slate-700' : 'bg-gray-200'}`}>
                                     <div
@@ -463,7 +469,7 @@ export const PlacementView: React.FC = () => {
 
                     {outcome.grades.some(g => g.feedback && g.feedback !== 'No answer given.') && (
                         <div className={`rounded-xl border p-4 mb-6 text-sm space-y-2 ${isHighContrast ? 'border-slate-600 bg-slate-800/60 text-slate-200' : 'border-dark-green/15 bg-white/60 text-dark-green/90'}`}>
-                            <p className="font-bold">✍️ About your writing:</p>
+                            <p className="font-bold flex items-center gap-1.5"><PenLine className="w-4 h-4 text-brand-turquoise" strokeWidth={2} aria-hidden="true" /> About your writing:</p>
                             {outcome.grades.map((g, i) => (
                                 g.feedback && g.feedback !== 'No answer given.'
                                     ? <p key={i}>• {g.feedback}</p>
@@ -503,13 +509,13 @@ export const PlacementView: React.FC = () => {
                 </div>
 
                 <div className="flex-grow flex flex-col justify-center items-center pb-10">
-                    <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${subColor}`}>
-                        ✍️ Writing · answer in {targetLang.name}
+                    <p className={`text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-1.5 ${subColor}`}>
+                        <PenLine className="w-4 h-4" strokeWidth={2} aria-hidden="true" /> Writing · answer in {targetLang.name}
                     </p>
                     <h2 className={`text-xl md:text-3xl font-extrabold mb-3 leading-tight text-center ${titleColor}`}>
                         {task.prompt}
                     </h2>
-                    {task.guidance && <p className={`mb-6 text-sm text-center ${subColor}`}>💡 {task.guidance}</p>}
+                    {task.guidance && <p className={`mb-6 text-sm text-center flex items-center justify-center gap-1.5 ${subColor}`}><Lightbulb className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden="true" /> {task.guidance}</p>}
 
                     <textarea
                         value={draft}
