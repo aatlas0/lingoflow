@@ -18,7 +18,7 @@ export const CorrectionPanel: React.FC<CorrectionPanelProps> = ({ corrections })
 
     if (!latestCorrection) {
         return (
-            <div className={`h-full flex flex-col items-center justify-center text-center p-6 ${isHighContrast ? 'text-slate-400' : 'text-dark-green/40'}`}>
+            <div className={`h-full flex flex-col items-center justify-center text-center p-6 ${isHighContrast ? 'text-night-muted' : 'text-dark-green/40'}`}>
                 <div className="text-4xl mb-4">✨</div>
                 <p className="font-medium">No corrections yet.</p>
                 <p className="text-sm">Keep chatting! I'll help you improve.</p>
@@ -34,12 +34,12 @@ export const CorrectionPanel: React.FC<CorrectionPanelProps> = ({ corrections })
 
             <div className={`p-6 rounded-xl shadow-sm border animate-fade-in flex-grow flex flex-col justify-center
                 ${isHighContrast
-                    ? 'bg-slate-800 border-slate-600'
+                    ? 'bg-night-card border-night-edge'
                     : 'bg-white border-desert-dark/50'}
             `}>
-                <div className={`mb-6 pb-6 border-b border-dashed ${isHighContrast ? 'border-slate-600' : 'border-gray-200'}`}>
+                <div className={`mb-6 pb-6 border-b border-dashed ${isHighContrast ? 'border-night-edge' : 'border-gray-200'}`}>
                     <p className="text-xs text-red-500 font-bold uppercase tracking-wide mb-2">You said</p>
-                    <p className={`line-through text-lg ${isHighContrast ? 'text-slate-400' : 'text-dark-green/80'}`}>{latestCorrection.original}</p>
+                    <p className={`line-through text-lg ${isHighContrast ? 'text-night-muted' : 'text-dark-green/80'}`}>{latestCorrection.original}</p>
                 </div>
 
                 <div className="mb-6">
@@ -47,8 +47,8 @@ export const CorrectionPanel: React.FC<CorrectionPanelProps> = ({ corrections })
                     <p className={`font-bold text-xl ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>{latestCorrection.corrected}</p>
                 </div>
 
-                <div className={`p-4 rounded-xl mt-auto ${isHighContrast ? 'bg-slate-700' : 'bg-desert/30'}`}>
-                    <p className={`text-sm italic ${isHighContrast ? 'text-slate-300' : 'text-dark-green/70'}`}>
+                <div className={`p-4 rounded-xl mt-auto ${isHighContrast ? 'bg-night-lift' : 'bg-desert/30'}`}>
+                    <p className={`text-sm italic ${isHighContrast ? 'text-night-soft' : 'text-dark-green/70'}`}>
                         💡 {latestCorrection.explanation}
                     </p>
                 </div>

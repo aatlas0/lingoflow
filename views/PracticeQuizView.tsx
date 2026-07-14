@@ -160,7 +160,7 @@ export const PracticeQuizView: React.FC<PracticeQuizViewProps> = ({
                             <span className="text-6xl font-black text-white drop-shadow-lg">
                                 {finalScore}%
                             </span>
-                            <span className="text-slate-400 font-medium mt-2">
+                            <span className="text-night-muted font-medium mt-2">
                                 {score}/{questions.length} Correct
                             </span>
                         </div>
@@ -170,7 +170,7 @@ export const PracticeQuizView: React.FC<PracticeQuizViewProps> = ({
                     <h2 className="text-4xl font-bold mb-4 text-white">
                         {passed ? '🎉 Magnificent!' : '💪 Keep Training!'}
                     </h2>
-                    <p className="text-xl mb-10 text-slate-300">
+                    <p className="text-xl mb-10 text-night-soft">
                         {passed
                             ? "You've mastered this technique. The path forward is open."
                             : `Mastery requires patience. You need 70% to pass.`
@@ -181,7 +181,7 @@ export const PracticeQuizView: React.FC<PracticeQuizViewProps> = ({
                     <div className="flex gap-6 justify-center">
                         <button
                             onClick={onExit}
-                            className="px-8 py-4 rounded-xl font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+                            className="px-8 py-4 rounded-xl font-bold text-night-soft hover:text-white hover:bg-white/10 transition-all"
                         >
                             Return to Dojo
                         </button>
@@ -216,7 +216,7 @@ export const PracticeQuizView: React.FC<PracticeQuizViewProps> = ({
 
             {/* Progress Header */}
             <div className="relative z-20 bg-night-bg/50 backdrop-blur-md border-b border-white/5">
-                <div className="h-1 bg-slate-800">
+                <div className="h-1 bg-night-card">
                     <div
                         className="h-full bg-gradient-to-r from-brand-turquoise to-teal-300 shadow-[0_0_10px_rgba(0,140,140,0.5)] transition-all duration-500 ease-out"
                         style={{ width: `${progress}%` }}
@@ -225,12 +225,12 @@ export const PracticeQuizView: React.FC<PracticeQuizViewProps> = ({
                 <div className="px-6 py-4 flex justify-between items-center">
                     <button
                         onClick={onExit}
-                        className="text-slate-400 hover:text-white transition-colors text-sm font-medium"
+                        className="text-night-muted hover:text-white transition-colors text-sm font-medium"
                     >
                         ✕ Exit
                     </button>
-                    <div className="text-slate-400 font-medium">
-                        Question {currentQuestionIndex + 1} <span className="text-slate-600">/ {questions.length}</span>
+                    <div className="text-night-muted font-medium">
+                        Question {currentQuestionIndex + 1} <span className="text-dark-green/70">/ {questions.length}</span>
                     </div>
                     <div className="w-12"></div> {/* Spacer for centering */}
                 </div>
@@ -302,7 +302,7 @@ export const PracticeQuizView: React.FC<PracticeQuizViewProps> = ({
                                     <span className="text-3xl">💡</span>
                                     <div>
                                         <p className="text-blue-300 font-bold mb-1 uppercase tracking-wider text-xs">Insight</p>
-                                        <p className="text-slate-200 text-lg leading-relaxed">
+                                        <p className="text-night-text text-lg leading-relaxed">
                                             {currentQuestion.explanation}
                                         </p>
                                     </div>

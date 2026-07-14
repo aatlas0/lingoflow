@@ -149,7 +149,7 @@ export const LightningRoundView = () => {
         return (
             <div className="flex flex-col items-center justify-center h-full text-center p-4 animate-fade-in">
                 <h1 className={`text-5xl font-bold mb-4 ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>{t('lightning.title')}</h1>
-                <p className={`text-xl mb-10 max-w-md ${isHighContrast ? 'text-slate-300' : 'text-dark-green/80'}`}>{t('lightning.description', { duration: GAME_DURATION })}</p>
+                <p className={`text-xl mb-10 max-w-md ${isHighContrast ? 'text-night-soft' : 'text-dark-green/80'}`}>{t('lightning.description', { duration: GAME_DURATION })}</p>
                 <Button onClick={startGame} disabled={questions.length === 0} className="text-lg px-10 py-4 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all">
                     {questions.length > 0 ? t('lightning.start') : t('lightning.loadingQuestions')}
                 </Button>
@@ -162,12 +162,12 @@ export const LightningRoundView = () => {
             <div className="flex flex-col items-center justify-center h-full text-center p-4 animate-fade-in">
                 <div className={`p-10 rounded-3xl shadow-2xl border-2 backdrop-blur-md
                     ${isHighContrast
-                        ? 'bg-night-card border-slate-700'
+                        ? 'bg-night-card border-night-line'
                         : 'bg-white/80 border-white'}
                 `}>
                     <h1 className="text-5xl font-bold mb-6 text-deep-red">{t('lightning.timesUp')}</h1>
                     <p className={`text-3xl mb-2 font-bold ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>{t('lightning.yourScore', { score: score })}</p>
-                    <p className={`text-lg mb-8 uppercase tracking-wider ${isHighContrast ? 'text-slate-400' : 'text-dark-green/70'}`}>{t('lightning.highScore', { highScore: profile.highScore })}</p>
+                    <p className={`text-lg mb-8 uppercase tracking-wider ${isHighContrast ? 'text-night-muted' : 'text-dark-green/70'}`}>{t('lightning.highScore', { highScore: profile.highScore })}</p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Button onClick={startGame}>{t('lightning.playAgain')}</Button>
                         <Button onClick={loadQuestions} variant="secondary">{t('lightning.newQuestions')}</Button>
@@ -184,7 +184,7 @@ export const LightningRoundView = () => {
             {/* Header Stats */}
             <div className={`shrink-0 flex justify-between w-full items-center mb-4 p-3 rounded-xl shadow-sm border backdrop-blur-sm
                 ${isHighContrast
-                    ? 'bg-night-card/50 border-slate-700'
+                    ? 'bg-night-card/50 border-night-line'
                     : 'bg-white/50 border-white/50'}
             `}>
                 <div className={`text-lg font-bold flex flex-col items-center min-w-[80px] ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
@@ -208,7 +208,7 @@ export const LightningRoundView = () => {
                     <div className="md:w-5/12 flex flex-col">
                         <div className={`flex-grow backdrop-blur-sm p-6 md:p-10 rounded-3xl shadow-xl border-2 flex items-center justify-center text-center relative overflow-hidden transition-all duration-150
                             ${isHighContrast
-                                ? 'bg-night-card border-slate-700'
+                                ? 'bg-night-card border-night-line'
                                 : 'bg-white/90 border-white'}
                             ${flash === 'correct' ? 'ring-4 ring-brand-turquoise/70' : flash === 'wrong' ? 'ring-4 ring-deep-red/70' : ''}
                         `}>
@@ -229,7 +229,7 @@ export const LightningRoundView = () => {
                                     variant="ghost"
                                     className={`text-lg md:text-xl border-2 h-full py-4 px-6 shadow-md hover:shadow-xl transition-all flex items-center justify-center rounded-2xl
                                         ${isHighContrast
-                                            ? 'bg-slate-800 border-slate-600 text-white hover:bg-brand-turquoise hover:border-brand-turquoise'
+                                            ? 'bg-night-card border-night-edge text-white hover:bg-brand-turquoise hover:border-brand-turquoise'
                                             : 'bg-white border-desert-dark text-dark-green hover:bg-brand-turquoise hover:border-brand-turquoise hover:text-white'}
                                     `}
                                 >

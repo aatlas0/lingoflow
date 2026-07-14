@@ -51,6 +51,12 @@
   --color-night-bg: #0F1613;       /* warm near-black, not slate */
   --color-night-card: #1A2420;
   --color-night-text: #EDE8DC;     /* starlight */
+  --color-night-lift: #22302A;     /* lifted surface (inputs, wells) */
+  --color-night-line: #2A362F;     /* hairline on night */
+  --color-night-edge: #3A4740;     /* brighter hairline (inputs, chips) */
+  --color-night-soft: #B9C4BC;     /* secondary text on night */
+  --color-night-muted: #9DABA3;    /* muted text on night */
+  --color-night-teal: #2DD4BF;     /* teal as text/accent on night */
 
   /* New Lumen Atlas tokens */
   --color-ink-soft: #5C6F69;       /* secondary text on paper — 4.9:1 */

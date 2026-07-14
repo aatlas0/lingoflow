@@ -33,7 +33,7 @@ const LanguageCard: React.FC<{
                 title={`Delete your ${lang.name} progress`}
                 aria-label={`Delete your ${lang.name} progress`}
                 className={`absolute top-3 right-3 z-10 p-1.5 rounded-full text-sm transition-all opacity-40 hover:opacity-100 hover:bg-red-500/15
-                    ${isHighContrast ? 'text-slate-400 hover:text-red-400' : 'text-dark-green/60 hover:text-red-600'}
+                    ${isHighContrast ? 'text-night-muted hover:text-red-400' : 'text-dark-green/60 hover:text-red-600'}
                 `}
             >
                 🗑️
@@ -50,7 +50,7 @@ const LanguageCard: React.FC<{
                 className={`w-full h-full text-left rounded-3xl border-2 p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-turquoise
                     ${isCurrent
                         ? (isHighContrast ? 'bg-night-card border-brand-turquoise' : 'bg-white/90 border-brand-turquoise')
-                        : (isHighContrast ? 'bg-night-card/70 border-slate-700 hover:border-brand-turquoise/60' : 'bg-white/70 border-gold/40 hover:border-brand-turquoise/60')}
+                        : (isHighContrast ? 'bg-night-card/70 border-night-line hover:border-brand-turquoise/60' : 'bg-white/70 border-gold/40 hover:border-brand-turquoise/60')}
                     backdrop-blur-sm
                 `}
             >
@@ -60,7 +60,7 @@ const LanguageCard: React.FC<{
                     <h3 className={`text-xl font-black truncate ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
                         {lang.name}
                     </h3>
-                    <p className={`text-sm font-bold ${isHighContrast ? 'text-teal-300' : 'text-brand-turquoise'}`}>
+                    <p className={`text-sm font-bold ${isHighContrast ? 'text-night-teal' : 'text-brand-turquoise'}`}>
                         Level {progress.level}
                     </p>
                 </div>
@@ -69,12 +69,12 @@ const LanguageCard: React.FC<{
             {/* XP toward the next level */}
             <div className="mb-4">
                 <div className={`flex justify-between text-[10px] font-black uppercase tracking-widest mb-1.5
-                    ${isHighContrast ? 'text-slate-400' : 'text-dark-green/50'}
+                    ${isHighContrast ? 'text-night-muted' : 'text-dark-green/50'}
                 `}>
                     <span>XP</span>
                     <span>{xpIntoLevel} / {XP_PER_LEVEL}</span>
                 </div>
-                <div className={`h-2.5 rounded-full overflow-hidden ${isHighContrast ? 'bg-slate-800' : 'bg-dark-green/10'}`}>
+                <div className={`h-2.5 rounded-full overflow-hidden ${isHighContrast ? 'bg-night-card' : 'bg-dark-green/10'}`}>
                     <div
                         className="h-full bg-gradient-to-r from-brand-turquoise to-gold transition-all duration-500"
                         style={{ width: `${xpPct}%` }}
@@ -83,7 +83,7 @@ const LanguageCard: React.FC<{
             </div>
 
             <div className={`flex items-center justify-between text-xs font-bold
-                ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}
+                ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}
             `}>
                 <span>🧠 {progress.quizzesCompleted} quizzes</span>
                 <span>⚡ {progress.highScore} best</span>
@@ -169,7 +169,7 @@ export const MyLanguagesView: React.FC = () => {
                 <h1 className={`text-3xl md:text-4xl font-black drop-shadow-sm ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
                     🌍 My Languages
                 </h1>
-                <p className={`mt-1 font-medium ${isHighContrast ? 'text-slate-400' : 'text-dark-green/70'}`}>
+                <p className={`mt-1 font-medium ${isHighContrast ? 'text-night-muted' : 'text-dark-green/70'}`}>
                     Each language keeps its own level, XP, mistakes and lessons — switch any time, nothing is lost.
                 </p>
             </div>
@@ -194,7 +194,7 @@ export const MyLanguagesView: React.FC = () => {
                         onClick={() => setPickerOpen(v => !v)}
                         className={`rounded-3xl border-2 border-dashed p-6 flex flex-col items-center justify-center gap-2 min-h-[190px] transition-all duration-300 hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-turquoise
                             ${isHighContrast
-                                ? 'border-slate-600 text-slate-400 hover:border-brand-turquoise hover:text-brand-turquoise bg-night-card/40'
+                                ? 'border-night-edge text-night-muted hover:border-brand-turquoise hover:text-brand-turquoise bg-night-card/40'
                                 : 'border-dark-green/30 text-dark-green/60 hover:border-brand-turquoise hover:text-brand-turquoise bg-white/40'}
                         `}
                     >
@@ -255,11 +255,11 @@ const DeleteConfirmModal: React.FC<{
                         <h2 className={`text-xl font-black mb-2 ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
                             Delete your {confirmDelete.lang.name} progress?
                         </h2>
-                        <p className={`text-sm mb-1 ${isHighContrast ? 'text-slate-300' : 'text-dark-green/80'}`}>
+                        <p className={`text-sm mb-1 ${isHighContrast ? 'text-night-soft' : 'text-dark-green/80'}`}>
                             This permanently erases <strong>Level {confirmDelete.progress.level}</strong>, <strong>{confirmDelete.progress.xp} XP</strong>, your lessons, saga map and logged mistakes for this language. It cannot be undone.
                         </p>
                         {confirmDelete.isCurrent && (
-                            <p className={`text-xs font-bold mb-1 ${isHighContrast ? 'text-teal-300' : 'text-brand-turquoise'}`}>
+                            <p className={`text-xs font-bold mb-1 ${isHighContrast ? 'text-night-teal' : 'text-brand-turquoise'}`}>
                                 You're learning this language right now — it will restart at Level 1.
                             </p>
                         )}
@@ -268,7 +268,7 @@ const DeleteConfirmModal: React.FC<{
                                 onClick={onCancel}
                                 disabled={isDeleting}
                                 className={`px-5 py-2.5 rounded-xl font-bold border-2 transition-all
-                                    ${isHighContrast ? 'border-slate-600 text-white hover:bg-white/10' : 'border-dark-green/30 text-dark-green hover:bg-black/5'}
+                                    ${isHighContrast ? 'border-night-edge text-white hover:bg-white/10' : 'border-dark-green/30 text-dark-green hover:bg-black/5'}
                                 `}
                             >
                                 Keep it
@@ -304,7 +304,7 @@ const LanguagePickerModal: React.FC<{
                 tabIndex={-1}
                 onClick={e => e.stopPropagation()}
                 className={`w-full max-w-2xl max-h-[75vh] overflow-y-auto rounded-3xl border-2 p-6 shadow-2xl focus:outline-none
-                    ${isHighContrast ? 'bg-night-card border-slate-700' : 'bg-desert border-gold'}
+                    ${isHighContrast ? 'bg-night-card border-night-line' : 'bg-desert border-gold'}
                 `}
             >
                 <div className="flex justify-between items-center mb-4">
@@ -313,7 +313,7 @@ const LanguagePickerModal: React.FC<{
                     </h2>
                     <button
                         onClick={onClose}
-                        className={`p-1.5 rounded-full font-bold ${isHighContrast ? 'text-slate-400 hover:text-white' : 'text-dark-green/50 hover:text-dark-green'}`}
+                        className={`p-1.5 rounded-full font-bold ${isHighContrast ? 'text-night-muted hover:text-white' : 'text-dark-green/50 hover:text-dark-green'}`}
                         aria-label="Close"
                     >
                         ✕
@@ -326,7 +326,7 @@ const LanguagePickerModal: React.FC<{
                             onClick={() => onPick(lang)}
                             className={`flex items-center gap-3 rounded-2xl border-2 p-3 font-bold transition-all hover:-translate-y-0.5 hover:border-brand-turquoise
                                 ${isHighContrast
-                                    ? 'bg-slate-800 border-slate-600 text-white'
+                                    ? 'bg-night-card border-night-edge text-white'
                                     : 'bg-white/80 border-white text-dark-green'}
                             `}
                         >

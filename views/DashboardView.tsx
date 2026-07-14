@@ -29,7 +29,7 @@ const MenuCard: React.FC<MenuCardProps> = ({ title, description, Icon, onClick, 
     const { isHighContrast } = useAppContext();
 
     const bgClass = isHighContrast
-        ? 'bg-night-card border-slate-700 hover:border-brand-turquoise'
+        ? 'bg-night-card border-night-line hover:border-brand-turquoise'
         : 'bg-white/80 border-desert-dark hover:border-brand-turquoise';
 
     return (
@@ -50,7 +50,7 @@ const MenuCard: React.FC<MenuCardProps> = ({ title, description, Icon, onClick, 
                 w-12 h-12 mb-2
                 md:w-14 md:h-14 md:mb-0 md:mr-4 md:shrink-0
                 ${isHighContrast
-                    ? 'bg-slate-800 border-slate-600 text-white'
+                    ? 'bg-night-card border-night-edge text-white'
                     : 'bg-dark-green border-desert text-white'}
             `}>
                 {isBusy
@@ -67,7 +67,7 @@ const MenuCard: React.FC<MenuCardProps> = ({ title, description, Icon, onClick, 
                 </h3>
                 {/* Description - Hidden on mobile, visible on desktop */}
                 <p className={`hidden md:block text-xs leading-relaxed font-medium line-clamp-2
-                    ${isHighContrast ? 'text-slate-400' : 'text-dark-green/80'}
+                    ${isHighContrast ? 'text-night-muted' : 'text-dark-green/80'}
                 `}>
                     {description}
                 </p>
@@ -138,7 +138,7 @@ export const DashboardView = () => {
                 <button
                     onClick={() => setView('languages')}
                     className={`shrink-0 flex items-center gap-1.5 text-xs md:text-sm underline font-bold hover:text-brand-turquoise
-                        ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}
+                        ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}
                     `}
                 >
                     <Languages className="w-4 h-4" strokeWidth={1.5} aria-hidden="true" /> My Languages
@@ -149,7 +149,7 @@ export const DashboardView = () => {
                 what to work on, and one obvious way to continue. */}
             <div className={`shrink-0 relative rounded-2xl border-2 p-4 md:p-5 mb-3 shadow-lg backdrop-blur-sm animate-fade-in overflow-hidden
                 ${isHighContrast
-                    ? 'bg-night-card border-slate-700'
+                    ? 'bg-night-card border-night-line'
                     : 'bg-white/85 border-desert-dark'}
             `}>
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
@@ -165,14 +165,14 @@ export const DashboardView = () => {
                         </div>
 
                         <JourneyLine progress={xpProgress} className="max-w-md" />
-                        <p className={`text-xs font-bold mt-1 tabular-nums ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
+                        <p className={`text-xs font-bold mt-1 tabular-nums ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>
                             {xpIntoLevel} / {XP_PER_LEVEL} XP to level {profile.level + 1}
                         </p>
 
                         {(weakAreas.length > 0 || strongAreas.length > 0) && (
                             <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                                 {weakAreas.length > 0 && (
-                                    <span className={`text-xs font-bold uppercase tracking-wide mr-0.5 ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
+                                    <span className={`text-xs font-bold uppercase tracking-wide mr-0.5 ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>
                                         Focus
                                     </span>
                                 )}
@@ -180,7 +180,7 @@ export const DashboardView = () => {
                                     <Chip key={area} variant="act">{titleCase(area)}</Chip>
                                 ))}
                                 {strongAreas.length > 0 && (
-                                    <span className={`text-xs font-bold uppercase tracking-wide ml-2 mr-0.5 ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
+                                    <span className={`text-xs font-bold uppercase tracking-wide ml-2 mr-0.5 ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>
                                         Strong
                                     </span>
                                 )}
@@ -225,12 +225,12 @@ export const DashboardView = () => {
                     {/* Your topics — the interests every AI generation leans on */}
                     <div className={`hidden md:flex backdrop-blur-sm p-3 rounded-2xl border mt-3 flex-grow flex-col items-center justify-center text-center gap-2
                         ${isHighContrast
-                            ? 'bg-night-card/60 border-slate-700'
+                            ? 'bg-night-card/60 border-night-line'
                             : 'bg-white/60 border-white/50'}
                     `}>
                         {interests.length > 0 ? (
                             <>
-                                <p className={`text-[10px] font-bold uppercase tracking-widest ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
+                                <p className={`text-[10px] font-bold uppercase tracking-widest ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>
                                     Your lessons lean on
                                 </p>
                                 <div className="flex flex-wrap justify-center gap-1.5">
@@ -240,7 +240,7 @@ export const DashboardView = () => {
                                 </div>
                             </>
                         ) : (
-                            <p className={`italic text-xs ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
+                            <p className={`italic text-xs ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>
                                 "Every day is a new adventure."
                             </p>
                         )}

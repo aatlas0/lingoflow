@@ -19,7 +19,7 @@ export const CityEpisodeView: React.FC<EpisodeViewProps> = ({ node, episode, isL
         return (
             <div className={`
                 h-[calc(100%-2rem)] w-[calc(100%-2rem)] m-4 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden
-                ${isHighContrast ? 'bg-slate-900 text-white' : 'bg-[#fdf6e3] text-slate-800'}
+                ${isHighContrast ? 'bg-night-bg text-white' : 'bg-[#fdf6e3] text-dark-green'}
                 shadow-2xl border border-teal-900/10
             `}>
                 <div className="w-12 h-12 border-4 border-brand-turquoise border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -31,19 +31,19 @@ export const CityEpisodeView: React.FC<EpisodeViewProps> = ({ node, episode, isL
     return (
         <div className={`
             h-[calc(100%-2rem)] w-[calc(100%-2rem)] m-4 rounded-2xl flex flex-col relative overflow-hidden
-            ${isHighContrast ? 'bg-slate-900 text-white' : 'bg-white text-slate-800'}
-            shadow-2xl border border-slate-200 dark:border-slate-700
+            ${isHighContrast ? 'bg-night-bg text-white' : 'bg-white text-dark-green'}
+            shadow-2xl border border-line dark:border-night-line
         `}>
             {/* Header */}
             <div className={`
                 relative p-6 shrink-0 border-b
-                ${isHighContrast ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-100'}
+                ${isHighContrast ? 'bg-night-bg border-night-line' : 'bg-desert border-line/60'}
             `}>
                 <button
                     onClick={onClose}
                     className={`
                         absolute top-6 right-6 p-2 rounded-full transition-colors
-                        ${isHighContrast ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}
+                        ${isHighContrast ? 'hover:bg-night-card text-night-muted' : 'hover:bg-desert-dark text-ink-soft'}
                     `}
                     title={t('btn_close')}
                 >
@@ -55,20 +55,20 @@ export const CityEpisodeView: React.FC<EpisodeViewProps> = ({ node, episode, isL
                         {t('lbl_episode') || 'Episode'}
                     </div>
                     <h2 className="text-2xl md:text-3xl font-bold mb-2 leading-tight">{episode.title}</h2>
-                    <p className={`text-sm leading-relaxed ${isHighContrast ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <p className={`text-sm leading-relaxed ${isHighContrast ? 'text-night-muted' : 'text-ink-soft'}`}>
                         {episode.intro_narrative}
                     </p>
 
                     {/* How to Play Section */}
                     {episode.how_to_play && (
-                        <div className={`mt-4 p-3 rounded-lg border ${isHighContrast ? 'bg-slate-800 border-slate-700' : 'bg-teal-50 border-teal-100'}`}>
+                        <div className={`mt-4 p-3 rounded-lg border ${isHighContrast ? 'bg-night-card border-night-line' : 'bg-teal-50 border-teal-100'}`}>
                             <div className="flex items-center gap-2 mb-1">
                                 <span className="text-lg">🎮</span>
                                 <h3 className={`text-xs font-bold uppercase tracking-wider ${isHighContrast ? 'text-teal-400' : 'text-teal-700'}`}>
                                     {t('lbl_how_to_play') || 'How to Play'}
                                 </h3>
                             </div>
-                            <p className={`text-sm ${isHighContrast ? 'text-slate-300' : 'text-slate-700'}`}>
+                            <p className={`text-sm ${isHighContrast ? 'text-night-soft' : 'text-dark-green/80'}`}>
                                 {episode.how_to_play}
                             </p>
                         </div>
@@ -90,11 +90,11 @@ export const CityEpisodeView: React.FC<EpisodeViewProps> = ({ node, episode, isL
                                 className={`
                                     group relative p-5 rounded-xl border transition-all duration-200
                                     ${isLocked
-                                        ? 'opacity-50 grayscale cursor-not-allowed bg-slate-50 dark:bg-slate-800/50'
+                                        ? 'opacity-50 grayscale cursor-not-allowed bg-desert dark:bg-night-card/50'
                                         : 'cursor-pointer hover:shadow-md hover:border-teal-500/30'}
                                     ${isActive
-                                        ? (isHighContrast ? 'bg-slate-800 border-teal-500 ring-1 ring-teal-500' : 'bg-white border-teal-500 ring-1 ring-teal-500')
-                                        : (isHighContrast ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200')}
+                                        ? (isHighContrast ? 'bg-night-card border-teal-500 ring-1 ring-teal-500' : 'bg-white border-teal-500 ring-1 ring-teal-500')
+                                        : (isHighContrast ? 'bg-night-bg border-night-line' : 'bg-white border-line')}
                                 `}
                                 onClick={() => !isLocked && onStartScenario(scenario.id)}
                             >
@@ -103,10 +103,10 @@ export const CityEpisodeView: React.FC<EpisodeViewProps> = ({ node, episode, isL
                                         <div className="flex items-center gap-2 mb-1">
                                             <h3 className="font-bold text-lg">{scenario.title}</h3>
                                             {isCompleted && <span className="text-green-500 text-sm">✓</span>}
-                                            {isLocked && <span className="text-slate-400 text-sm">🔒</span>}
+                                            {isLocked && <span className="text-night-muted text-sm">🔒</span>}
                                         </div>
 
-                                        <p className={`text-sm mb-3 ${isHighContrast ? 'text-slate-400' : 'text-slate-600'}`}>
+                                        <p className={`text-sm mb-3 ${isHighContrast ? 'text-night-muted' : 'text-dark-green/70'}`}>
                                             {scenario.description}
                                         </p>
 
@@ -122,7 +122,7 @@ export const CityEpisodeView: React.FC<EpisodeViewProps> = ({ node, episode, isL
                                             shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition-colors
                                             ${isActive
                                                 ? 'bg-teal-600 text-white hover:bg-teal-700'
-                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}
+                                                : 'bg-desert-dark/50 text-dark-green/70 hover:bg-desert-dark dark:bg-night-card dark:text-night-soft'}
                                         `}>
                                             {isActive ? (t('btn_start') || 'Start') : (t('btn_replay') || 'Replay')}
                                         </button>

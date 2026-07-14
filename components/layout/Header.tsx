@@ -23,7 +23,7 @@ export const Header = () => {
     return (
         <header className={`shadow-lg border-b-4 relative z-10 transition-all duration-300
             ${isHighContrast
-                ? 'bg-slate-900 border-slate-700'
+                ? 'bg-night-bg border-night-line'
                 : 'bg-dark-green border-gold'}
         `}>
             <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -33,7 +33,7 @@ export const Header = () => {
                             <button
                                 onClick={() => setView('dashboard')}
                                 className={`transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded-full p-1
-                                    ${isHighContrast ? 'text-slate-400 hover:text-white' : 'text-desert hover:text-white'}
+                                    ${isHighContrast ? 'text-night-muted hover:text-white' : 'text-desert hover:text-white'}
                                 `}
                                 aria-label={locT('header.back')}
                             >
@@ -49,7 +49,7 @@ export const Header = () => {
                         >
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ring-2 shadow-md
                                 ${isHighContrast
-                                    ? 'bg-brand-turquoise text-white ring-slate-600'
+                                    ? 'bg-brand-turquoise text-white ring-night-edge'
                                     : 'bg-gold text-dark-green ring-desert'}
                             `}>L</div>
                             <span className={`font-bold text-xl tracking-wider hidden sm:block
@@ -81,7 +81,7 @@ export const Header = () => {
                         className="hidden md:flex items-center gap-2 mx-4 bg-black/20 px-3 py-1 rounded-full"
                         title={`Immersion: how much of the adventure appears in ${targetLang.name}. It rises as you level up — adjust it any time.`}
                     >
-                        <span className={`flex items-center gap-1.5 text-xs font-bold uppercase ${isHighContrast ? 'text-teal-300' : 'text-gold'}`}><Waves className="w-3.5 h-3.5" strokeWidth={2} aria-hidden="true" /> Immersion {immersionLevel}%</span>
+                        <span className={`flex items-center gap-1.5 text-xs font-bold uppercase ${isHighContrast ? 'text-night-teal' : 'text-gold'}`}><Waves className="w-3.5 h-3.5" strokeWidth={2} aria-hidden="true" /> Immersion {immersionLevel}%</span>
                         <input
                             type="range"
                             min="0"
@@ -104,7 +104,7 @@ export const Header = () => {
                                     className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-black text-sm select-none
                                         ${streak > 0
                                             ? 'bg-ember-fill/15 text-ember-fill'
-                                            : (isHighContrast ? 'bg-white/5 text-slate-500' : 'bg-black/20 text-desert/60')}
+                                            : (isHighContrast ? 'bg-white/5 text-ink-soft' : 'bg-black/20 text-desert/60')}
                                     `}
                                 >
                                     {/* An alive streak carries its own light */}
@@ -127,7 +127,7 @@ export const Header = () => {
                         </button>
 
                         {username && (
-                            <span className={`hidden sm:block text-sm font-bold ml-2 ${isHighContrast ? 'text-slate-300' : 'text-desert'}`}>
+                            <span className={`hidden sm:block text-sm font-bold ml-2 ${isHighContrast ? 'text-night-soft' : 'text-desert'}`}>
                                 {username}
                             </span>
                         )}
@@ -135,7 +135,7 @@ export const Header = () => {
                             onClick={() => signOut()}
                             title="Log out"
                             className={`p-2 rounded-full hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold ml-1
-                                ${isHighContrast ? 'text-slate-300' : 'text-desert'}
+                                ${isHighContrast ? 'text-night-soft' : 'text-desert'}
                             `}
                         >
                             <LogOut className="w-5 h-5" strokeWidth={1.5} aria-hidden="true" />

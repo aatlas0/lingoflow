@@ -54,11 +54,11 @@ export const AuthView: React.FC = () => {
   const inputClasses = `
     w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:border-brand-turquoise transition-colors
     ${isHighContrast
-      ? 'border-slate-600 bg-slate-700/80 text-white placeholder:text-slate-500'
+      ? 'border-night-edge bg-night-lift/80 text-white placeholder:text-ink-soft'
       : 'border-desert-dark bg-white/80 text-dark-green placeholder:text-dark-green/30'}
   `;
 
-  const labelClasses = `block text-sm font-bold mb-1 ${isHighContrast ? 'text-slate-200' : 'text-dark-green'}`;
+  const labelClasses = `block text-sm font-bold mb-1 ${isHighContrast ? 'text-night-text' : 'text-dark-green'}`;
 
   return (
     <div className="h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -70,7 +70,7 @@ export const AuthView: React.FC = () => {
         aria-pressed={isHighContrast}
         title={isHighContrast ? 'Switch to light mode' : 'Switch to dark mode'}
         className={`absolute top-4 right-4 z-20 p-3 rounded-full text-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-turquoise
-          ${isHighContrast ? 'bg-slate-800/80 text-slate-200 hover:bg-slate-700' : 'bg-white/60 text-dark-green hover:bg-white/90'}
+          ${isHighContrast ? 'bg-night-card/80 text-night-text hover:bg-night-lift' : 'bg-white/60 text-dark-green hover:bg-white/90'}
         `}
       >
         {isHighContrast ? '🌕' : '🌑'}
@@ -83,14 +83,14 @@ export const AuthView: React.FC = () => {
             L
           </div>
           <h1 className={`text-4xl font-black tracking-tight ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>LingoFlow</h1>
-          <p className={`mt-2 ${isHighContrast ? 'text-slate-300' : 'text-dark-green/70'}`}>Your journey to a new language starts here.</p>
+          <p className={`mt-2 ${isHighContrast ? 'text-night-soft' : 'text-dark-green/70'}`}>Your journey to a new language starts here.</p>
         </div>
 
         <div className={`backdrop-blur-md rounded-2xl shadow-xl border p-8
-          ${isHighContrast ? 'bg-slate-800/90 border-slate-700' : 'bg-white/80 border-desert-dark/50'}
+          ${isHighContrast ? 'bg-night-card/90 border-night-line' : 'bg-white/80 border-desert-dark/50'}
         `}>
           {/* Mode Tabs */}
-          <div className={`flex rounded-lg p-1 mb-6 ${isHighContrast ? 'bg-slate-900/60' : 'bg-desert/50'}`} role="tablist">
+          <div className={`flex rounded-lg p-1 mb-6 ${isHighContrast ? 'bg-night-bg/60' : 'bg-desert/50'}`} role="tablist">
             <button
               role="tab"
               aria-selected={mode === 'signIn'}
@@ -98,7 +98,7 @@ export const AuthView: React.FC = () => {
               className={`flex-1 py-2 rounded-md font-bold transition-all ${
                 mode === 'signIn'
                   ? 'bg-brand-turquoise text-white shadow'
-                  : isHighContrast ? 'text-slate-400 hover:text-white' : 'text-dark-green/60 hover:text-dark-green'
+                  : isHighContrast ? 'text-night-muted hover:text-white' : 'text-dark-green/60 hover:text-dark-green'
               }`}
             >
               Sign In
@@ -110,7 +110,7 @@ export const AuthView: React.FC = () => {
               className={`flex-1 py-2 rounded-md font-bold transition-all ${
                 mode === 'signUp'
                   ? 'bg-brand-turquoise text-white shadow'
-                  : isHighContrast ? 'text-slate-400 hover:text-white' : 'text-dark-green/60 hover:text-dark-green'
+                  : isHighContrast ? 'text-night-muted hover:text-white' : 'text-dark-green/60 hover:text-dark-green'
               }`}
             >
               Create Account
@@ -189,7 +189,7 @@ export const AuthView: React.FC = () => {
             </Button>
           </form>
 
-          <p className={`text-center text-xs mt-6 ${isHighContrast ? 'text-slate-400' : 'text-dark-green/50'}`}>
+          <p className={`text-center text-xs mt-6 ${isHighContrast ? 'text-night-muted' : 'text-dark-green/50'}`}>
             {mode === 'signUp'
               ? 'Your progress is saved to your account and follows you across devices.'
               : 'New here? Create an account to save your progress.'}

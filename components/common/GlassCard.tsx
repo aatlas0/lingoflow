@@ -16,9 +16,9 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     intensity = 'medium'
 }) => {
     const intensityMap = {
-        low: 'bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border-white/20 dark:border-slate-700/30',
-        medium: 'bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-white/30 dark:border-slate-700/40',
-        high: 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-white/40 dark:border-slate-700/50'
+        low: 'bg-white/40 dark:bg-night-bg/40 backdrop-blur-md border-white/20 dark:border-night-line/30',
+        medium: 'bg-white/60 dark:bg-night-bg/60 backdrop-blur-xl border-white/30 dark:border-night-line/40',
+        high: 'bg-white/80 dark:bg-night-bg/80 backdrop-blur-2xl border-white/40 dark:border-night-line/50'
     };
 
     return (

@@ -17,7 +17,7 @@ const LanguagePickList: React.FC<{
     <div
       role="listbox"
       className={`max-h-64 overflow-y-auto rounded-xl border p-1.5 space-y-1
-        ${isHighContrast ? 'border-slate-600 bg-slate-900/40' : 'border-desert-dark/40 bg-white/50'}
+        ${isHighContrast ? 'border-night-edge bg-night-bg/40' : 'border-desert-dark/40 bg-white/50'}
       `}
     >
       {options.map(lang => {
@@ -32,7 +32,7 @@ const LanguagePickList: React.FC<{
             className={`w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-3
               ${isActive
                 ? 'bg-brand-turquoise text-white shadow-md'
-                : (isHighContrast ? 'text-slate-200 hover:bg-slate-700' : 'text-dark-green hover:bg-brand-turquoise/10')}
+                : (isHighContrast ? 'text-night-text hover:bg-night-lift' : 'text-dark-green hover:bg-brand-turquoise/10')}
             `}
           >
             <span className="text-xl">{flagOf(lang.code)}</span>
@@ -72,7 +72,7 @@ export const HomeView = () => {
           title={isHighContrast ? "Disable Dark Mode" : "Enable Dark Mode"}
           className={`p-3 rounded-full backdrop-blur-md transition-all shadow-lg border
             ${isHighContrast
-              ? 'bg-slate-800/50 text-yellow-400 border-slate-600 hover:bg-slate-700/50'
+              ? 'bg-night-card/50 text-yellow-400 border-night-edge hover:bg-night-lift/50'
               : 'bg-white/20 text-dark-green border-white/30 hover:bg-white/40'}
           `}
         >
@@ -98,7 +98,7 @@ export const HomeView = () => {
             );
           })()}
         </h1>
-        <p className={`text-xl md:text-2xl mb-8 font-medium leading-relaxed ${isHighContrast ? 'text-slate-300' : 'text-dark-green/90'}`}>
+        <p className={`text-xl md:text-2xl mb-8 font-medium leading-relaxed ${isHighContrast ? 'text-night-soft' : 'text-dark-green/90'}`}>
           {t('home.subtitle')}
         </p>
       </div>
@@ -107,10 +107,10 @@ export const HomeView = () => {
       <div className="flex-1 w-full max-w-sm">
         <div className={`backdrop-blur-xl p-5 md:p-6 rounded-3xl shadow-2xl border transform transition-all
           ${isHighContrast
-            ? 'bg-night-card/80 border-slate-700'
+            ? 'bg-night-card/80 border-night-line'
             : 'bg-white/70 border-white/60'}
         `}>
-          <p className={`text-xs font-bold uppercase tracking-widest mb-1 text-center ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
+          <p className={`text-xs font-bold uppercase tracking-widest mb-1 text-center ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>
             Step {step} of 2
           </p>
           <h2 className={`text-xl font-bold mb-4 text-center ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
@@ -146,7 +146,7 @@ export const HomeView = () => {
                   onSelect={setTarget}
                 />
               </div>
-              <p className={`text-xs mb-3 text-center ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
+              <p className={`text-xs mb-3 text-center ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>
                 One language at a time — you can add more later from My Languages.
               </p>
               <div className="flex gap-2">

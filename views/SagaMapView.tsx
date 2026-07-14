@@ -62,7 +62,7 @@ const HeroJournal: React.FC<{ map: SagaMap; profile: any }> = ({ map, profile })
                             <p className={`font-bold text-lg leading-tight ${isHighContrast ? 'text-night-text' : 'text-dark-green'}`}>
                                 {nextNode ? ((immersionLevel || 0) >= 50 ? nextNode.title : (nextNode.titleNative || nextNode.title)) : t('lbl_unknown_dest')}
                             </p>
-                            <p className={`opacity-70 text-xs font-mono ${isHighContrast ? 'text-teal-300' : 'text-teal-800'}`}>{t('lbl_distance')}: 2 {t('lbl_days')}</p>
+                            <p className={`opacity-70 text-xs font-mono ${isHighContrast ? 'text-night-teal' : 'text-teal-800'}`}>{t('lbl_distance')}: 2 {t('lbl_days')}</p>
                         </div>
                     </div>
                 </div>
@@ -113,12 +113,12 @@ const NodeComponent: React.FC<{ node: MapNode; isCurrent: boolean; isSelected: b
     } else if (node.status === 'available') {
         baseClass += " cursor-pointer hover:scale-110 animate-pulse-slow";
         baseClass += isHighContrast
-            ? " bg-brand-turquoise text-slate-900 border-white shadow-[0_0_15px_rgba(56,189,248,0.6)]"
+            ? " bg-brand-turquoise text-dark-green border-white shadow-[0_0_15px_rgba(56,189,248,0.6)]"
             : " bg-brand-turquoise text-white border-white shadow-[0_0_15px_rgba(45,212,191,0.6)]";
     } else if (node.status === 'completed' || node.status === 'perfect') {
         baseClass += " cursor-pointer hover:scale-105";
         baseClass += isHighContrast
-            ? " bg-gold text-slate-900 border-gold"
+            ? " bg-gold text-dark-green border-gold"
             : " bg-gold text-white border-gold";
     }
 

@@ -240,7 +240,7 @@ export const QuizView = () => {
                     <div className={`
                         p-6 md:p-8 rounded-3xl shadow-2xl border-2 text-center transition-all duration-500
                         ${isHighContrast
-                            ? 'bg-night-card border-slate-700'
+                            ? 'bg-night-card border-night-line'
                             : 'bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm border-gold/30'}
                     `}>
                         <h1 className={`text-3xl md:text-4xl font-extrabold mb-4 ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
@@ -253,9 +253,9 @@ export const QuizView = () => {
                         {/* Score Display */}
                         <div className="mb-6">
                             <div className="text-6xl md:text-7xl font-black text-gold mb-2 drop-shadow-lg">
-                                {score} <span className={`text-4xl md:text-5xl ${isHighContrast ? 'text-slate-500' : 'text-dark-green/50'}`}>/</span> {questions.length}
+                                {score} <span className={`text-4xl md:text-5xl ${isHighContrast ? 'text-ink-soft' : 'text-dark-green/50'}`}>/</span> {questions.length}
                             </div>
-                            <p className={`text-xl md:text-2xl font-semibold ${isHighContrast ? 'text-slate-300' : 'text-dark-green/80'}`}>
+                            <p className={`text-xl md:text-2xl font-semibold ${isHighContrast ? 'text-night-soft' : 'text-dark-green/80'}`}>
                                 {score === questions.length ? '🏆 Perfect Score!' :
                                     score >= questions.length * 0.8 ? '⭐ Great Job!' :
                                         score >= questions.length * 0.6 ? '👍 Good Effort!' :
@@ -290,12 +290,12 @@ export const QuizView = () => {
                 <div className={`
                     w-full md:w-7/12 lg:w-2/3 flex flex-col h-full rounded-3xl border-2 overflow-hidden shadow-xl transition-all duration-500
                     ${isHighContrast
-                        ? 'bg-night-card/80 border-slate-700 backdrop-blur-md'
+                        ? 'bg-night-card/80 border-night-line backdrop-blur-md'
                         : 'bg-white/40 border-white/50 backdrop-blur-md'}
                 `}>
                     <div className={`
                         p-6 border-b shrink-0
-                        ${isHighContrast ? 'bg-night-card border-slate-700' : 'bg-white/30 border-white/20'}
+                        ${isHighContrast ? 'bg-night-card border-night-line' : 'bg-white/30 border-white/20'}
                     `}>
                         <h2 className={`text-2xl font-bold flex items-center gap-3 ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
                             <span>📝</span> Detailed Review
@@ -306,11 +306,11 @@ export const QuizView = () => {
                         {userAnswers.map((answer, index) => (
                             <div key={index} className={`
                                 p-5 rounded-2xl border-l-[6px] shadow-sm hover:shadow-md transition-all duration-300
-                                ${isHighContrast ? 'bg-slate-800' : 'bg-white/80'}
+                                ${isHighContrast ? 'bg-night-card' : 'bg-white/80'}
                                 ${answer.isCorrect ? 'border-gold' : 'border-deep-red'}
                             `}>
                                 <div className="flex justify-between items-start mb-3">
-                                    <p className={`font-bold text-lg flex gap-2 ${isHighContrast ? 'text-slate-200' : 'text-dark-green'}`}>
+                                    <p className={`font-bold text-lg flex gap-2 ${isHighContrast ? 'text-night-text' : 'text-dark-green'}`}>
                                         <span className="text-brand-turquoise opacity-70">#{index + 1}</span>
                                         {getText(answer.question.question)}
                                     </p>
@@ -320,20 +320,20 @@ export const QuizView = () => {
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                                    <div className={`p-3 rounded-xl border ${isHighContrast ? 'bg-slate-900 border-slate-700' : 'bg-gray-50/80 border-gray-100'}`}>
-                                        <p className={`text-xs font-bold uppercase mb-1.5 ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>Your Answer</p>
+                                    <div className={`p-3 rounded-xl border ${isHighContrast ? 'bg-night-bg border-night-line' : 'bg-gray-50/80 border-gray-100'}`}>
+                                        <p className={`text-xs font-bold uppercase mb-1.5 ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>Your Answer</p>
                                         <p className={`text-base font-semibold ${!answer.isCorrect ? 'text-deep-red' : 'text-gold'}`}>{getText(answer.selectedAnswer)}</p>
                                     </div>
                                     {!answer.isCorrect && (
-                                        <div className={`p-3 rounded-xl border ${isHighContrast ? 'bg-slate-900 border-slate-700' : 'bg-gray-50/80 border-gray-100'}`}>
-                                            <p className={`text-xs font-bold uppercase mb-1.5 ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>Correct Answer</p>
+                                        <div className={`p-3 rounded-xl border ${isHighContrast ? 'bg-night-bg border-night-line' : 'bg-gray-50/80 border-gray-100'}`}>
+                                            <p className={`text-xs font-bold uppercase mb-1.5 ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>Correct Answer</p>
                                             <p className="text-brand-turquoise font-semibold text-base">{getText(answer.question.correctAnswer)}</p>
                                         </div>
                                     )}
                                 </div>
 
                                 {answer.question.explanation && (
-                                    <div className={`p-3 rounded-xl border flex gap-3 ${isHighContrast ? 'bg-yellow-900/20 border-yellow-700/30 text-slate-300' : 'bg-gold/5 border-gold/10 text-dark-green'}`}>
+                                    <div className={`p-3 rounded-xl border flex gap-3 ${isHighContrast ? 'bg-yellow-900/20 border-yellow-700/30 text-night-soft' : 'bg-gold/5 border-gold/10 text-dark-green'}`}>
                                         <Lightbulb className="w-5 h-5 shrink-0 text-gold" strokeWidth={1.5} aria-hidden="true" />
                                         <p className="text-sm leading-relaxed opacity-90">{answer.question.explanation}</p>
                                     </div>

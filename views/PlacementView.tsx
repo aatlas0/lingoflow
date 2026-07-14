@@ -115,10 +115,10 @@ export const PlacementView: React.FC = () => {
     }, [phase]);
 
     const cardClasses = isHighContrast
-        ? 'bg-night-card/90 border-slate-700'
+        ? 'bg-night-card/90 border-night-line'
         : 'bg-white/80 border-white/60';
     const titleColor = isHighContrast ? 'text-white' : 'text-dark-green';
-    const subColor = isHighContrast ? 'text-slate-300' : 'text-dark-green/70';
+    const subColor = isHighContrast ? 'text-night-soft' : 'text-dark-green/70';
     const chipBase = isHighContrast
         ? 'bg-night-card border-[#2A362F] text-night-text hover:border-brand-turquoise'
         : 'bg-white/95 border-dark-green/20 text-dark-green hover:border-brand-turquoise hover:shadow-lg';
@@ -472,7 +472,7 @@ export const PlacementView: React.FC = () => {
                                     <span className="flex items-center gap-1.5"><skill.Icon className="w-4 h-4 text-brand-turquoise" strokeWidth={2} aria-hidden="true" /> {skill.label}</span>
                                     <span className="tabular-nums">{outcome.skillScores[skill.key]}%</span>
                                 </div>
-                                <div className={`h-2.5 rounded-full overflow-hidden ${isHighContrast ? 'bg-slate-700' : 'bg-gray-200'}`}>
+                                <div className={`h-2.5 rounded-full overflow-hidden ${isHighContrast ? 'bg-night-lift' : 'bg-gray-200'}`}>
                                     {/* Bars sweep in one after another once the reveal fires */}
                                     <div
                                         className="h-full bg-brand-turquoise rounded-full transition-all duration-1000 ease-out"
@@ -487,7 +487,7 @@ export const PlacementView: React.FC = () => {
                     </div>
 
                     {outcome.grades.some(g => g.feedback && g.feedback !== 'No answer given.') && (
-                        <div className={`rounded-xl border p-4 mb-6 text-sm space-y-2 ${isHighContrast ? 'border-slate-600 bg-slate-800/60 text-slate-200' : 'border-dark-green/15 bg-white/60 text-dark-green/90'}`}>
+                        <div className={`rounded-xl border p-4 mb-6 text-sm space-y-2 ${isHighContrast ? 'border-night-edge bg-night-card/60 text-night-text' : 'border-dark-green/15 bg-white/60 text-dark-green/90'}`}>
                             <p className="font-bold flex items-center gap-1.5"><PenLine className="w-4 h-4 text-brand-turquoise" strokeWidth={2} aria-hidden="true" /> About your writing:</p>
                             {outcome.grades.map((g, i) => (
                                 g.feedback && g.feedback !== 'No answer given.'
@@ -516,7 +516,7 @@ export const PlacementView: React.FC = () => {
         return (
             <div className="w-full h-full max-w-3xl mx-auto p-4 flex flex-col">
                 <div className="shrink-0 flex items-center gap-4 mb-8 mt-2">
-                    <div className={`h-3 rounded-full flex-1 overflow-hidden ${isHighContrast ? 'bg-slate-700' : 'bg-gray-200'}`}>
+                    <div className={`h-3 rounded-full flex-1 overflow-hidden ${isHighContrast ? 'bg-night-lift' : 'bg-gray-200'}`}>
                         <div
                             className="h-full bg-brand-turquoise transition-all duration-500 ease-out"
                             style={{ width: `${((questionNumber - 1) / totalQuestions) * 100}%` }}
@@ -544,7 +544,7 @@ export const PlacementView: React.FC = () => {
                         placeholder={`Write 1-3 sentences in ${targetLang.name}…`}
                         className={`w-full max-w-xl p-4 rounded-xl border-2 font-medium focus:ring-2 focus:ring-brand-turquoise focus:border-brand-turquoise outline-none transition-all resize-none
                             ${isHighContrast
-                                ? 'bg-slate-800 border-slate-600 text-white placeholder:text-slate-500'
+                                ? 'bg-night-card border-night-edge text-white placeholder:text-ink-soft'
                                 : 'bg-white/95 border-dark-green/20 text-dark-green placeholder:text-dark-green/40'}
                         `}
                     />
@@ -578,7 +578,7 @@ export const PlacementView: React.FC = () => {
                 >
                     Skip test
                 </button>
-                <div className={`h-3 rounded-full flex-1 overflow-hidden ${isHighContrast ? 'bg-slate-700' : 'bg-gray-200'}`}>
+                <div className={`h-3 rounded-full flex-1 overflow-hidden ${isHighContrast ? 'bg-night-lift' : 'bg-gray-200'}`}>
                     <div
                         className="h-full bg-brand-turquoise transition-all duration-500 ease-out"
                         style={{ width: `${(mcqIndex / totalQuestions) * 100}%` }}

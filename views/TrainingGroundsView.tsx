@@ -173,7 +173,7 @@ export const TrainingGroundsView: React.FC = () => {
                         <span className="text-2xl animate-pulse">✨</span>
                     </div>
                 </div>
-                <p className="mt-4 text-lg font-medium text-slate-700 animate-pulse">
+                <p className="mt-4 text-lg font-medium text-dark-green/80 animate-pulse">
                     Loading Training Grounds...
                 </p>
             </div>
@@ -197,10 +197,10 @@ export const TrainingGroundsView: React.FC = () => {
             <div className="max-w-7xl mx-auto px-6 py-12 relative z-10">
                 {/* Hero Section - Vivid Typography */}
                 <div className="text-center mb-16">
-                    <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight mb-4 drop-shadow-sm">
+                    <h1 className="text-5xl md:text-6xl font-black text-dark-green tracking-tight mb-4 drop-shadow-sm">
                         Training Grounds
                     </h1>
-                    <p className="text-xl text-slate-700 max-w-2xl mx-auto font-bold tracking-wide opacity-80">
+                    <p className="text-xl text-dark-green/80 max-w-2xl mx-auto font-bold tracking-wide opacity-80">
                         Master the basics with structured lessons.
                     </p>
                 </div>
@@ -306,7 +306,7 @@ const FlipCategoryCard: React.FC<{
                         {/* Header */}
                         <div className="flex justify-between items-start mb-6">
                             <div className={`
-                                text-6xl p-5 rounded-3xl bg-slate-900 text-white shadow-2xl border-2 border-slate-800
+                                text-6xl p-5 rounded-3xl bg-night-bg text-white shadow-2xl border-2 border-night-line
                                 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6
                             `}>
                                 {isLocked ? '🔒' : category.icon}
@@ -320,20 +320,20 @@ const FlipCategoryCard: React.FC<{
 
                         {/* Content */}
                         <div>
-                            <h3 className="text-3xl font-black text-slate-900 mb-3 group-hover:text-amber-600 transition-colors tracking-tight">
+                            <h3 className="text-3xl font-black text-dark-green mb-3 group-hover:text-amber-600 transition-colors tracking-tight">
                                 {category.name}
                             </h3>
-                            <p className="text-slate-600 text-base mb-8 line-clamp-2 font-medium leading-relaxed">
+                            <p className="text-dark-green/70 text-base mb-8 line-clamp-2 font-medium leading-relaxed">
                                 {category.description}
                             </p>
 
                             {/* Progress */}
                             <div className="space-y-3">
-                                <div className="flex justify-between text-xs font-black text-slate-400 uppercase tracking-widest">
+                                <div className="flex justify-between text-xs font-black text-night-muted uppercase tracking-widest">
                                     <span>Progress</span>
                                     <span className="text-amber-600">{Math.round(category.progress)}%</span>
                                 </div>
-                                <div className="h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                                <div className="h-3 bg-desert-dark/50 rounded-full overflow-hidden border border-line">
                                     <div
                                         className="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]"
                                         style={{ width: `${category.progress}%` }}
@@ -346,10 +346,10 @@ const FlipCategoryCard: React.FC<{
 
                 {/* BACK FACE (Grid of Dots) */}
                 <div className="absolute inset-0 backface-hidden rotate-y-180">
-                    <div className="h-full flex flex-col bg-slate-900 rounded-3xl border-2 border-amber-500/30 relative overflow-hidden shadow-2xl">
+                    <div className="h-full flex flex-col bg-night-bg rounded-3xl border-2 border-amber-500/30 relative overflow-hidden shadow-2xl">
 
                         {/* Header Info Panel */}
-                        <div className="h-[140px] bg-gradient-to-b from-slate-800 to-slate-900 p-5 flex flex-col justify-center relative overflow-hidden shrink-0 border-b border-amber-500/30">
+                        <div className="h-[140px] bg-gradient-to-b from-night-card to-night-bg p-5 flex flex-col justify-center relative overflow-hidden shrink-0 border-b border-amber-500/30">
                             {/* Ambient Glow */}
                             <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                             <div className="absolute bottom-0 left-0 w-32 h-32 bg-brand-turquoise/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
@@ -360,11 +360,11 @@ const FlipCategoryCard: React.FC<{
                                         <h4 className="text-white font-bold text-lg tracking-tight leading-tight line-clamp-1 drop-shadow-md">
                                             {hoveredLesson.title}
                                         </h4>
-                                        <span className="text-[10px] font-black text-slate-900 bg-amber-400 px-2 py-1 rounded shadow-[0_0_10px_rgba(251,191,36,0.4)] shrink-0 ml-2">
+                                        <span className="text-[10px] font-black text-dark-green bg-amber-400 px-2 py-1 rounded shadow-[0_0_10px_rgba(251,191,36,0.4)] shrink-0 ml-2">
                                             {hoveredLesson.questionCount} Qs
                                         </span>
                                     </div>
-                                    <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed mb-3 font-medium opacity-90">
+                                    <p className="text-xs text-night-soft line-clamp-2 leading-relaxed mb-3 font-medium opacity-90">
                                         {hoveredLesson.description}
                                     </p>
 
@@ -385,16 +385,16 @@ const FlipCategoryCard: React.FC<{
                                                         
                                                         ${i < hoveredLesson.difficulty && i !== 0
                                                             ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] scale-110'
-                                                            : i !== 0 ? 'bg-slate-700' : ''}
+                                                            : i !== 0 ? 'bg-night-lift' : ''}
                                                         
                                                         /* First Dot Styling */
                                                         ${i === 0 && isHoveredUnlocked ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]' : ''}
-                                                        ${i === 0 && !isHoveredUnlocked ? 'bg-slate-700 opacity-50 cursor-not-allowed' : ''}
+                                                        ${i === 0 && !isHoveredUnlocked ? 'bg-night-lift opacity-50 cursor-not-allowed' : ''}
                                                     `}
                                                     title={i === 0 ? (isHoveredUnlocked ? "Start Contextual Quiz" : "Locked") : undefined}
                                                 >
                                                     {i === 0 && isHoveredUnlocked && (
-                                                        <span className="absolute inset-0 flex items-center justify-center text-[10px] opacity-0 hover:opacity-100 font-bold text-slate-900">▶</span>
+                                                        <span className="absolute inset-0 flex items-center justify-center text-[10px] opacity-0 hover:opacity-100 font-bold text-dark-green">▶</span>
                                                     )}
                                                 </button>
                                             </div>
@@ -403,7 +403,7 @@ const FlipCategoryCard: React.FC<{
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-pulse relative z-10">
+                                <div className="flex flex-col items-center justify-center h-full text-ink-soft animate-pulse relative z-10">
                                     <span className="text-4xl mb-2 filter drop-shadow-lg">✨</span>
                                     <span className="text-xs font-bold uppercase tracking-[0.2em] text-amber-500/50">Select a Lesson</span>
                                 </div>
@@ -411,7 +411,7 @@ const FlipCategoryCard: React.FC<{
                         </div>
 
                         {/* Scrollable Grid Area */}
-                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-900 relative">
+                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-night-bg relative">
                             {/* Subtle Grid Pattern */}
                             <div className="absolute inset-0 opacity-5 pointer-events-none"
                                 style={{ backgroundImage: 'radial-gradient(#fbbf24 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
@@ -442,8 +442,8 @@ const FlipCategoryCard: React.FC<{
                                                     ${isCompleted
                                                         ? 'bg-gradient-to-br from-amber-400 to-orange-600 text-white shadow-[0_0_15px_rgba(245,158,11,0.5)] border border-amber-300/50 scale-100'
                                                         : isUnlocked
-                                                            ? 'bg-slate-800 text-white border border-slate-600 hover:scale-110 hover:z-50 hover:bg-brand-turquoise hover:border-brand-turquoise hover:shadow-[0_0_20px_rgba(45,212,191,0.6)]'
-                                                            : 'bg-slate-800/50 text-slate-600 border border-slate-800 cursor-not-allowed'
+                                                            ? 'bg-night-card text-white border border-night-edge hover:scale-110 hover:z-50 hover:bg-brand-turquoise hover:border-brand-turquoise hover:shadow-[0_0_20px_rgba(45,212,191,0.6)]'
+                                                            : 'bg-night-card/50 text-dark-green/70 border border-night-line cursor-not-allowed'
                                                     }
                                                 `}
                                             >
@@ -460,8 +460,8 @@ const FlipCategoryCard: React.FC<{
                         </div>
 
                         {/* Flip Back Hint */}
-                        <div className="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-slate-900 via-slate-900/90 to-transparent pointer-events-none flex justify-center z-20">
-                            <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold bg-slate-800/80 px-4 py-1.5 rounded-full backdrop-blur-md border border-slate-700 shadow-lg group-hover:border-amber-500/30 transition-colors">
+                        <div className="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-night-bg via-night-bg/90 to-transparent pointer-events-none flex justify-center z-20">
+                            <span className="text-[10px] text-night-muted uppercase tracking-widest font-bold bg-night-card/80 px-4 py-1.5 rounded-full backdrop-blur-md border border-night-line shadow-lg group-hover:border-amber-500/30 transition-colors">
                                 Tap card to flip back
                             </span>
                         </div>

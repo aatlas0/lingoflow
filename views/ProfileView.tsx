@@ -19,7 +19,7 @@ const XPBar: React.FC<{ xp: number; level: number }> = ({ xp, level }) => {
                 <span>{t('profile.level', { level })}</span>
                 <span>{t('profile.xp', { xp: currentLevelXp, totalXp: XP_PER_LEVEL })}</span>
             </div>
-            <div className={`w-full rounded-full h-6 overflow-hidden shadow-inner border ${isHighContrast ? 'bg-slate-700 border-slate-600' : 'bg-desert-dark border-desert-dark'}`}>
+            <div className={`w-full rounded-full h-6 overflow-hidden shadow-inner border ${isHighContrast ? 'bg-night-lift border-night-edge' : 'bg-desert-dark border-desert-dark'}`}>
                 {/* The animation is triggered by the CSS transition property when the width changes */}
                 <div
                     className="bg-deep-red h-6 rounded-full transition-all duration-700 ease-out relative"
@@ -37,12 +37,12 @@ const StatCard: React.FC<{ label: string; value: string | number; icon: string }
     return (
         <div className={`p-6 rounded-xl flex items-center gap-4 shadow-sm border hover:shadow-md transition-shadow
             ${isHighContrast
-                ? 'bg-night-card border-slate-700'
+                ? 'bg-night-card border-night-line'
                 : 'bg-white border-desert-dark'}
         `}>
             <span className="text-4xl text-gold filter drop-shadow-sm">{icon}</span>
             <div>
-                <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>{label}</p>
+                <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>{label}</p>
                 <p className={`text-2xl font-bold ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>{value}</p>
             </div>
         </div>
@@ -59,14 +59,14 @@ const AchievementIcon: React.FC<{ achievementId: string; isUnlocked: boolean }> 
         ? 'bg-night-card border-gold shadow-md transform hover:-translate-y-1'
         : 'bg-white border-gold shadow-md transform hover:-translate-y-1';
     const lockedClasses = isHighContrast
-        ? 'bg-slate-800 border-slate-700 opacity-50 grayscale'
+        ? 'bg-night-card border-night-line opacity-50 grayscale'
         : 'bg-gray-100 border-gray-200 opacity-50 grayscale';
 
     return (
         <div className={`${baseClasses} ${isUnlocked ? unlockedClasses : lockedClasses}`}>
             <div className="text-4xl mb-3">{achievement.icon}</div>
             <p className={`font-bold text-sm mb-1 ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>{achievement.name}</p>
-            <p className={`text-xs leading-tight ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>{isUnlocked ? achievement.description : t('profile.locked')}</p>
+            <p className={`text-xs leading-tight ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>{isUnlocked ? achievement.description : t('profile.locked')}</p>
         </div>
     );
 }
@@ -102,7 +102,7 @@ const LanguagesStrip: React.FC = () => {
                 </h2>
                 <button
                     onClick={() => setView('languages')}
-                    className={`text-sm underline font-bold hover:text-brand-turquoise ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}
+                    className={`text-sm underline font-bold hover:text-brand-turquoise ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}
                 >
                     Manage
                 </button>
@@ -117,7 +117,7 @@ const LanguagesStrip: React.FC = () => {
                             className={`flex items-center gap-4 p-4 rounded-2xl border shadow-sm
                                 ${isCurrent
                                     ? (isHighContrast ? 'bg-night-card border-brand-turquoise' : 'bg-white border-brand-turquoise')
-                                    : (isHighContrast ? 'bg-night-card/60 border-slate-700' : 'bg-white/60 border-desert-dark')}
+                                    : (isHighContrast ? 'bg-night-card/60 border-night-line' : 'bg-white/60 border-desert-dark')}
                             `}
                         >
                             <span className="text-3xl shrink-0">{flagOf(lang!.code)}</span>
@@ -130,13 +130,13 @@ const LanguagesStrip: React.FC = () => {
                                         </span>
                                     )}
                                 </div>
-                                <div className={`mt-1.5 h-2 rounded-full overflow-hidden max-w-xs ${isHighContrast ? 'bg-slate-800' : 'bg-dark-green/10'}`}>
+                                <div className={`mt-1.5 h-2 rounded-full overflow-hidden max-w-xs ${isHighContrast ? 'bg-night-card' : 'bg-dark-green/10'}`}>
                                     <div className="h-full bg-gradient-to-r from-brand-turquoise to-gold" style={{ width: `${pct}%` }}></div>
                                 </div>
                             </div>
                             <div className="text-right shrink-0">
-                                <p className={`font-black ${isHighContrast ? 'text-teal-300' : 'text-brand-turquoise'}`}>Lv {progress.level}</p>
-                                <p className={`text-xs font-bold ${isHighContrast ? 'text-slate-400' : 'text-dark-green/50'}`}>{progress.xp} XP</p>
+                                <p className={`font-black ${isHighContrast ? 'text-night-teal' : 'text-brand-turquoise'}`}>Lv {progress.level}</p>
+                                <p className={`text-xs font-bold ${isHighContrast ? 'text-night-muted' : 'text-dark-green/50'}`}>{progress.xp} XP</p>
                             </div>
                         </div>
                     );
@@ -154,7 +154,7 @@ export const ProfileView = () => {
         <div className="w-full h-full max-w-7xl mx-auto p-4 flex flex-col overflow-hidden animate-fade-in">
             <div className="shrink-0 text-center mb-6 md:mb-10">
                 <h1 className={`text-3xl md:text-5xl font-bold mb-2 drop-shadow-sm ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>{t('profile.title')}</h1>
-                <p className={`text-sm font-bold uppercase tracking-widest ${isHighContrast ? 'text-slate-400' : 'text-dark-green/60'}`}>
+                <p className={`text-sm font-bold uppercase tracking-widest ${isHighContrast ? 'text-night-muted' : 'text-dark-green/60'}`}>
                     {flagOf(targetLang.code)} Your journey in {targetLang.name} · progress is saved per language
                 </p>
             </div>
@@ -163,7 +163,7 @@ export const ProfileView = () => {
                 {/* Top Section: XP Bar */}
                 <div className={`backdrop-blur-sm p-6 md:p-8 rounded-3xl shadow-xl border mb-8
                     ${isHighContrast
-                        ? 'bg-night-card/60 border-slate-700'
+                        ? 'bg-night-card/60 border-night-line'
                         : 'bg-white/60 border-white'}
                 `}>
                     <XPBar xp={profile.xp} level={profile.level} />
