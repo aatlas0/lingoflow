@@ -201,6 +201,15 @@ body.high-contrast {
   border-color: #FBBF24 !important;
 }
 
+.high-contrast .text-ember {
+  color: #FBBF24 !important; /* ember reads too dim on night surfaces */
+}
+
+/* Hairline strokes (journey line, progress rings) — night hairline, not paper */
+.high-contrast .text-desert-dark {
+  color: #3A4740 !important;
+}
+
 /* Inputs in Dark Mode */
 .high-contrast select,
 .high-contrast input,
