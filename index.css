@@ -68,6 +68,7 @@
   --animate-pulse-slow: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-shake: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
   --animate-pop-in: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-ember-glow: emberGlow 2.4s ease-in-out infinite;
 
   @keyframes fadeIn {
     0% { opacity: 0; }
@@ -90,12 +91,18 @@
     0% { opacity: 0; transform: scale(0.5); }
     100% { opacity: 1; transform: scale(1); }
   }
+
+  /* Light as reward: the earned-moment glow (level reveal, streak flame) */
+  @keyframes emberGlow {
+    0%, 100% { filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.35)); }
+    50% { filter: drop-shadow(0 0 14px rgba(245, 158, 11, 0.65)); }
+  }
 }
 
 /* Answer feedback should still read for users who prefer reduced motion —
    the color states carry the meaning; the movement is optional. */
 @media (prefers-reduced-motion: reduce) {
-  .animate-shake, .animate-pop-in {
+  .animate-shake, .animate-pop-in, .animate-ember-glow {
     animation: none;
   }
 }

@@ -103,11 +103,12 @@ export const Header = () => {
                                     title={streak > 0 ? `${streak}-day streak — practice daily to keep it!` : 'Practice today to start a streak!'}
                                     className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-black text-sm select-none
                                         ${streak > 0
-                                            ? 'bg-orange-500/20 text-orange-400'
+                                            ? 'bg-ember-fill/15 text-ember-fill'
                                             : (isHighContrast ? 'bg-white/5 text-slate-500' : 'bg-black/20 text-desert/60')}
                                     `}
                                 >
-                                    <Flame className={`w-4 h-4 ${streak > 0 ? 'fill-current' : 'opacity-60'}`} strokeWidth={1.5} aria-hidden="true" />
+                                    {/* An alive streak carries its own light */}
+                                    <Flame className={`w-4 h-4 ${streak > 0 ? 'fill-current animate-ember-glow' : 'opacity-60'}`} strokeWidth={1.5} aria-hidden="true" />
                                     <span>{streak}</span>
                                 </div>
                             );

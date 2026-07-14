@@ -27,7 +27,7 @@ const HeroJournal: React.FC<{ map: SagaMap; profile: any }> = ({ map, profile })
     return (
         <div className={`
             h-[calc(100%-2rem)] w-[calc(100%-2rem)] m-4 rounded-3xl flex flex-col relative overflow-hidden
-            ${isHighContrast ? 'bg-slate-900 text-white' : 'bg-[#fdf6e3] text-slate-800'}
+            ${isHighContrast ? 'bg-night-card text-night-text' : 'bg-desert text-dark-green'}
             shadow-2xl border border-teal-900/10
         `}>
             {/* Pattern Overlay */}
@@ -36,7 +36,7 @@ const HeroJournal: React.FC<{ map: SagaMap; profile: any }> = ({ map, profile })
             ></div>
 
             {/* Header */}
-            <div className="relative h-32 bg-gradient-to-b from-teal-900 to-slate-900 flex items-center justify-center p-4 text-center overflow-hidden shrink-0">
+            <div className="relative h-32 bg-gradient-to-b from-[#123A33] to-[#0F1613] flex items-center justify-center p-4 text-center overflow-hidden shrink-0">
                 {/* Decorative Circles */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2"></div>
 
@@ -51,15 +51,15 @@ const HeroJournal: React.FC<{ map: SagaMap; profile: any }> = ({ map, profile })
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 relative z-10 custom-scrollbar">
 
                 {/* Current Objective */}
-                <div className={`p-4 rounded-xl border shadow-sm ${isHighContrast ? 'bg-slate-800 border-slate-700' : 'bg-white/60 border-teal-900/10'}`}>
+                <div className={`p-4 rounded-xl border shadow-sm ${isHighContrast ? 'bg-[#22302A] border-[#2A362F]' : 'bg-white/60 border-teal-900/10'}`}>
                     <div className="flex items-center gap-2 mb-2 opacity-80">
                         <span className="text-base">🧭</span>
-                        <h3 className={`font-bold uppercase tracking-wider text-[10px] ${isHighContrast ? 'text-teal-300' : 'text-teal-900'}`}>{t('lbl_objective')}</h3>
+                        <h3 className={`font-bold uppercase tracking-wider text-[10px] ${isHighContrast ? 'text-[#2DD4BF]' : 'text-ink-soft'}`}>{t('lbl_objective')}</h3>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="text-3xl filter drop-shadow-sm">{nextNode?.type === 'city' ? '🏔️' : '💎'}</div>
                         <div>
-                            <p className={`font-bold text-lg leading-tight ${isHighContrast ? 'text-white' : 'text-slate-900'}`}>
+                            <p className={`font-bold text-lg leading-tight ${isHighContrast ? 'text-night-text' : 'text-dark-green'}`}>
                                 {nextNode ? ((immersionLevel || 0) >= 50 ? nextNode.title : (nextNode.titleNative || nextNode.title)) : t('lbl_unknown_dest')}
                             </p>
                             <p className={`opacity-70 text-xs font-mono ${isHighContrast ? 'text-teal-300' : 'text-teal-800'}`}>{t('lbl_distance')}: 2 {t('lbl_days')}</p>
@@ -68,25 +68,25 @@ const HeroJournal: React.FC<{ map: SagaMap; profile: any }> = ({ map, profile })
                 </div>
 
                 {/* Biome Lore */}
-                <div className={`p-4 rounded-xl border shadow-sm ${isHighContrast ? 'bg-slate-800 border-slate-700' : 'bg-white/60 border-teal-900/10'}`}>
+                <div className={`p-4 rounded-xl border shadow-sm ${isHighContrast ? 'bg-[#22302A] border-[#2A362F]' : 'bg-white/60 border-teal-900/10'}`}>
                     <div className="flex items-center gap-2 mb-2 opacity-80">
                         <span className="text-base">🗺️</span>
-                        <h3 className={`font-bold uppercase tracking-wider text-[10px] ${isHighContrast ? 'text-teal-300' : 'text-teal-900'}`}>{t('lbl_lore')}</h3>
+                        <h3 className={`font-bold uppercase tracking-wider text-[10px] ${isHighContrast ? 'text-[#2DD4BF]' : 'text-ink-soft'}`}>{t('lbl_lore')}</h3>
                     </div>
-                    <p className={`italic text-base leading-relaxed font-serif ${isHighContrast ? 'text-slate-200' : 'text-slate-800'}`}>"{getBiomeLore(currentBiome)}"</p>
+                    <p className={`italic text-base leading-relaxed font-serif ${isHighContrast ? 'text-night-text/90' : 'text-dark-green/90'}`}>"{getBiomeLore(currentBiome)}"</p>
                 </div>
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3">
-                    <div className={`p-3 rounded-xl border text-center ${isHighContrast ? 'bg-slate-800 border-slate-700' : 'bg-white/60 border-teal-900/10'}`}>
+                    <div className={`p-3 rounded-xl border text-center ${isHighContrast ? 'bg-[#22302A] border-[#2A362F]' : 'bg-white/60 border-teal-900/10'}`}>
                         <div className="text-xl mb-1">🔥</div>
-                        <div className={`text-xl font-bold ${isHighContrast ? 'text-white' : 'text-slate-900'}`}>{effectiveStreak(profile)}</div>
-                        <div className={`text-[10px] opacity-70 uppercase font-bold ${isHighContrast ? 'text-teal-300' : 'text-teal-900'}`}>{t('lbl_streak')}</div>
+                        <div className={`text-xl font-bold ${isHighContrast ? 'text-night-text' : 'text-dark-green'}`}>{effectiveStreak(profile)}</div>
+                        <div className={`text-[10px] opacity-70 uppercase font-bold ${isHighContrast ? 'text-[#2DD4BF]' : 'text-ink-soft'}`}>{t('lbl_streak')}</div>
                     </div>
-                    <div className={`p-3 rounded-xl border text-center ${isHighContrast ? 'bg-slate-800 border-slate-700' : 'bg-white/60 border-teal-900/10'}`}>
+                    <div className={`p-3 rounded-xl border text-center ${isHighContrast ? 'bg-[#22302A] border-[#2A362F]' : 'bg-white/60 border-teal-900/10'}`}>
                         <div className="text-xl mb-1">✨</div>
-                        <div className={`text-xl font-bold ${isHighContrast ? 'text-white' : 'text-slate-900'}`}>{profile.xp}</div>
-                        <div className={`text-[10px] opacity-70 uppercase font-bold ${isHighContrast ? 'text-teal-300' : 'text-teal-900'}`}>{t('lbl_xp')}</div>
+                        <div className={`text-xl font-bold ${isHighContrast ? 'text-night-text' : 'text-dark-green'}`}>{profile.xp}</div>
+                        <div className={`text-[10px] opacity-70 uppercase font-bold ${isHighContrast ? 'text-[#2DD4BF]' : 'text-ink-soft'}`}>{t('lbl_xp')}</div>
                     </div>
                 </div>
             </div>
@@ -108,8 +108,8 @@ const NodeComponent: React.FC<{ node: MapNode; isCurrent: boolean; isSelected: b
 
     if (node.status === 'locked') {
         baseClass += isHighContrast
-            ? " bg-slate-800 border-slate-600 text-slate-500 cursor-not-allowed"
-            : " bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed";
+            ? " bg-night-card border-[#2A362F] text-[#5C6F69] cursor-not-allowed"
+            : " bg-desert-dark border-[#D8D1C0] text-dark-green/40 cursor-not-allowed";
     } else if (node.status === 'available') {
         baseClass += " cursor-pointer hover:scale-110 animate-pulse-slow";
         baseClass += isHighContrast
@@ -122,9 +122,9 @@ const NodeComponent: React.FC<{ node: MapNode; isCurrent: boolean; isSelected: b
             : " bg-gold text-white border-gold";
     }
 
-    // Selected State Highlight
+    // Selected State Highlight — teal, selection is an act not a reward
     if (isSelected) {
-        baseClass += " ring-4 ring-amber-300 scale-125 z-50";
+        baseClass += " ring-4 ring-brand-turquoise/50 scale-125 z-50";
     }
 
     return (
@@ -145,7 +145,7 @@ const NodeComponent: React.FC<{ node: MapNode; isCurrent: boolean; isSelected: b
             {node.type === 'city' && (
                 <div className={`
                     absolute top-full mt-2 px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap shadow-sm
-                    ${isHighContrast ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}
+                    ${isHighContrast ? 'bg-night-card text-night-text' : 'bg-white text-dark-green'}
                 `}>
                     {(immersionLevel || 0) >= 50 ? node.title : (node.titleNative || node.title)}
                 </div>
@@ -312,8 +312,8 @@ export const SagaMapView = () => {
             {/* --- MAP SECTION --- */}
             <div className={`
                 relative h-full transition-all duration-500 ease-in-out
-                ${selectedNode ? 'w-full md:w-1/2' : 'w-full md:w-1/2'} 
-                ${isHighContrast ? 'bg-slate-900' : 'bg-transparent'}
+                ${selectedNode ? 'w-full md:w-1/2' : 'w-full md:w-1/2'}
+                bg-transparent
             `}>
                 {/* Scroll Container */}
                 <div ref={containerRef} className="w-full h-full overflow-y-auto relative custom-scrollbar scroll-smooth px-8">
@@ -333,15 +333,20 @@ export const SagaMapView = () => {
 
                                 const d = `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
 
+                                // Light as reward: the traveled route glows teal
+                                // and stays solid; the road ahead is a dashed hairline.
+                                const stroke = isCompleted
+                                    ? (isHighContrast ? '#2DD4BF' : '#0F766E')
+                                    : (isHighContrast ? '#3A4740' : '#8A9691');
                                 return (
                                     <path
                                         key={`path-${index}`}
                                         d={d}
                                         fill="none"
-                                        stroke={isHighContrast ? '#94a3b8' : '#64748b'} // Darker gray for visibility
-                                        strokeWidth="4"
+                                        stroke={stroke}
+                                        strokeWidth={isCompleted ? 4 : 3}
                                         strokeLinecap="round"
-                                        strokeDasharray={isCompleted ? "0" : "10, 10"} // Solid if completed, dashed if not
+                                        strokeDasharray={isCompleted ? "0" : "10, 10"}
                                         className="opacity-100"
                                         vectorEffect="non-scaling-stroke"
                                     />

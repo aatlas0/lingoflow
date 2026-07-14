@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Sprout, Leaf, TreePine, Mountain, Target, Medal,
     BookOpen, Puzzle, Eye, PenLine, Lightbulb,
@@ -102,6 +102,17 @@ export const PlacementView: React.FC = () => {
     // The profile object built from this test — passed straight to the
     // roadmap generators instead of trusting React state to have flushed.
     const [builtProfile, setBuiltProfile] = useState<LearnerProfile | null>(null);
+    // The reveal moment: results mount dim with zero-width skill bars, then
+    // this flips and the glow + staggered bar sweep play.
+    const [revealed, setRevealed] = useState(false);
+    useEffect(() => {
+        if (phase !== 'results') {
+            setRevealed(false);
+            return;
+        }
+        const id = setTimeout(() => setRevealed(true), 150);
+        return () => clearTimeout(id);
+    }, [phase]);
 
     const cardClasses = isHighContrast
         ? 'bg-night-card/90 border-slate-700'
@@ -441,8 +452,10 @@ export const PlacementView: React.FC = () => {
         return (
             <div className="flex items-center justify-center min-h-full p-4 animate-fade-in">
                 <div className={`backdrop-blur-md rounded-3xl shadow-2xl border-2 p-6 md:p-10 max-w-xl w-full ${cardClasses}`}>
-                    <div className="flex justify-center mb-3"><Medal className="w-16 h-16 text-gold" strokeWidth={1.5} aria-hidden="true" /></div>
-                    <h1 className={`text-3xl md:text-4xl font-extrabold mb-1 text-center ${titleColor}`}>
+                    <div className="flex justify-center mb-3">
+                        <Medal className={`w-16 h-16 text-gold transition-all duration-700 ${revealed ? 'animate-ember-glow scale-100 opacity-100' : 'scale-50 opacity-0'}`} strokeWidth={1.5} aria-hidden="true" />
+                    </div>
+                    <h1 className={`text-3xl md:text-4xl font-extrabold mb-1 text-center transition-all duration-500 ${titleColor} ${revealed ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'}`}>
                         You're {outcome.cefr} — {CEFR_LABELS[outcome.cefr]}
                     </h1>
                     {outcome.mcqTotal > 0 && (
@@ -453,16 +466,20 @@ export const PlacementView: React.FC = () => {
                     <p className={`text-center mb-6 ${subColor}`}>{CEFR_BLURBS[outcome.cefr]}</p>
 
                     <div className="space-y-3 mb-6">
-                        {SKILL_LABELS.map(skill => (
+                        {SKILL_LABELS.map((skill, i) => (
                             <div key={skill.key}>
                                 <div className={`flex justify-between text-sm font-bold mb-1 ${titleColor}`}>
                                     <span className="flex items-center gap-1.5"><skill.Icon className="w-4 h-4 text-brand-turquoise" strokeWidth={2} aria-hidden="true" /> {skill.label}</span>
                                     <span className="tabular-nums">{outcome.skillScores[skill.key]}%</span>
                                 </div>
                                 <div className={`h-2.5 rounded-full overflow-hidden ${isHighContrast ? 'bg-slate-700' : 'bg-gray-200'}`}>
+                                    {/* Bars sweep in one after another once the reveal fires */}
                                     <div
                                         className="h-full bg-brand-turquoise rounded-full transition-all duration-1000 ease-out"
-                                        style={{ width: `${outcome.skillScores[skill.key]}%` }}
+                                        style={{
+                                            width: revealed ? `${outcome.skillScores[skill.key]}%` : '0%',
+                                            transitionDelay: `${300 + i * 150}ms`,
+                                        }}
                                     ></div>
                                 </div>
                             </div>
