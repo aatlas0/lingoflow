@@ -109,7 +109,7 @@ export const PlacementView: React.FC = () => {
     const titleColor = isHighContrast ? 'text-white' : 'text-dark-green';
     const subColor = isHighContrast ? 'text-slate-300' : 'text-dark-green/70';
     const chipBase = isHighContrast
-        ? 'bg-slate-800 border-slate-600 text-white hover:border-brand-turquoise'
+        ? 'bg-night-card border-[#2A362F] text-night-text hover:border-brand-turquoise'
         : 'bg-white/95 border-dark-green/20 text-dark-green hover:border-brand-turquoise hover:shadow-lg';
     const chipActive = 'bg-brand-turquoise text-white border-brand-turquoise shadow-xl';
 
@@ -220,6 +220,8 @@ export const PlacementView: React.FC = () => {
         setMcqResults(nextResults);
         setTopicOutcomes(nextOutcomes);
 
+        // Give the answer feedback time to land — longer when wrong so the
+        // learner can read the correct answer before it moves on.
         setTimeout(() => {
             setSelected(null);
             if (mcqIndex < test.mcq.length - 1) {
@@ -229,7 +231,7 @@ export const PlacementView: React.FC = () => {
             } else {
                 finishTest(nextResults, nextOutcomes, []);
             }
-        }, 400);
+        }, isCorrect ? 650 : 1300);
     };
 
     const submitWriting = (skip: boolean) => {
@@ -581,14 +583,28 @@ export const PlacementView: React.FC = () => {
 
                 <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                     {question.options.map((option, index) => {
-                        const isSelected = selected ? areTextsEqual(selected, option) : false;
+                        // Answer-state feedback: correct fills teal, wrong shakes red
+                        // and the right answer is revealed with a teal ring.
+                        let stateClasses = chipBase;
+                        if (selected) {
+                            const isThisSelected = areTextsEqual(selected, option);
+                            const isThisCorrect = areTextsEqual(option, question.correctAnswer);
+                            if (isThisSelected) {
+                                stateClasses = isThisCorrect
+                                    ? `${chipActive} scale-[1.02]`
+                                    : 'bg-deep-red/10 text-deep-red border-deep-red animate-shake';
+                            } else if (isThisCorrect) {
+                                stateClasses = `${chipBase} !border-brand-turquoise ring-2 ring-brand-turquoise/40`;
+                            } else {
+                                stateClasses = `${chipBase} opacity-50`;
+                            }
+                        }
                         return (
                             <button
                                 key={index}
                                 onClick={() => handleSelect(option)}
-                                className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 font-semibold
-                                    ${isSelected ? `${chipActive} scale-[1.02]` : chipBase}
-                                `}
+                                disabled={!!selected}
+                                className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-150 font-semibold ${stateClasses}`}
                             >
                                 {getText(option)}
                             </button>

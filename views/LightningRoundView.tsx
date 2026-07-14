@@ -115,13 +115,20 @@ export const LightningRoundView = () => {
         setGameState('playing');
     };
 
+    // Non-blocking answer feedback: the pace is the game, so the next question
+    // appears instantly and the question card flashes teal/red for a beat.
+    const [flash, setFlash] = useState<'correct' | 'wrong' | null>(null);
+
     const handleSelectAnswer = (selectedAnswer: QuizText) => {
         if (gameState !== 'playing') return;
 
         const currentQuestion = questions[currentQuestionIndex];
-        if (areTextsEqual(selectedAnswer, currentQuestion.correctAnswer)) {
+        const wasCorrect = areTextsEqual(selectedAnswer, currentQuestion.correctAnswer);
+        if (wasCorrect) {
             setScore(prev => prev + 1);
         }
+        setFlash(wasCorrect ? 'correct' : 'wrong');
+        window.setTimeout(() => setFlash(null), 350);
 
         // Recycle from the start if the prefetch hasn't landed yet — never
         // swap the game for a loading screen while the timer is running.
@@ -199,10 +206,11 @@ export const LightningRoundView = () => {
                 <div className="flex-grow flex flex-col md:flex-row gap-4 md:gap-8 overflow-hidden">
                     {/* Left: Question Card */}
                     <div className="md:w-5/12 flex flex-col">
-                        <div className={`flex-grow backdrop-blur-sm p-6 md:p-10 rounded-3xl shadow-xl border-2 flex items-center justify-center text-center relative overflow-hidden transition-colors duration-300
+                        <div className={`flex-grow backdrop-blur-sm p-6 md:p-10 rounded-3xl shadow-xl border-2 flex items-center justify-center text-center relative overflow-hidden transition-all duration-150
                             ${isHighContrast
                                 ? 'bg-night-card border-slate-700'
                                 : 'bg-white/90 border-white'}
+                            ${flash === 'correct' ? 'ring-4 ring-brand-turquoise/70' : flash === 'wrong' ? 'ring-4 ring-deep-red/70' : ''}
                         `}>
                             <div className={`absolute top-0 right-0 p-4 opacity-10 text-9xl ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>⚡️</div>
                             <h2 className={`text-2xl md:text-4xl lg:text-5xl font-bold leading-tight z-10 ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>

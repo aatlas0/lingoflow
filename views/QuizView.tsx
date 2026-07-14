@@ -5,6 +5,8 @@ import { useLocalization } from '../contexts/LocalizationContext';
 import { generateQuiz } from '../services/geminiService';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { Button } from '../components/common/Button';
+import { Chip } from '../components/common/Card';
+import { JourneyLine } from '../components/common/JourneyLine';
 import { SpeakerIcon } from '../components/common/SpeakerIcon';
 import type { QuizQuestion, UserAnswer, QuizText, DarijaText } from '../types';
 import { XP_GAINS } from '../constants/achievements';
@@ -33,23 +35,36 @@ const areTextsEqual = (a: QuizText, b: QuizText): boolean => {
     return false;
 }
 
+export type OptionState = 'idle' | 'correct' | 'wrong' | 'reveal' | 'locked';
+
 const QuizOption: React.FC<{
     option: QuizText;
-    isSelected: boolean;
+    state: OptionState;
     onSelect: () => void;
-}> = ({ option, isSelected, onSelect }) => {
-    const baseClasses = "w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all duration-200 flex justify-between items-center relative overflow-hidden cursor-pointer h-full";
+}> = ({ option, state, onSelect }) => {
+    const baseClasses = "w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all duration-150 flex justify-between items-center relative overflow-hidden h-full";
 
-    let stateClasses = 'bg-white/95 border-dark-green/20 hover:border-brand-turquoise hover:shadow-lg text-dark-green';
-
-    if (isSelected) {
-        stateClasses = 'bg-brand-turquoise text-white border-brand-turquoise shadow-xl scale-[1.02]';
-    }
+    const stateClasses: Record<OptionState, string> = {
+        idle: 'bg-white/95 border-dark-green/20 hover:border-brand-turquoise hover:shadow-lg text-dark-green cursor-pointer',
+        correct: 'bg-brand-turquoise text-white border-brand-turquoise shadow-xl scale-[1.02]',
+        wrong: 'bg-deep-red/10 text-deep-red border-deep-red animate-shake',
+        reveal: 'bg-white/95 text-brand-turquoise border-brand-turquoise ring-2 ring-brand-turquoise/40',
+        locked: 'bg-white/95 border-dark-green/20 text-dark-green opacity-50',
+    };
 
     return (
-        <button onClick={onSelect} className={`${baseClasses} ${stateClasses}`}>
+        <button
+            onClick={onSelect}
+            disabled={state !== 'idle'}
+            aria-label={state === 'correct' ? 'Correct answer' : state === 'wrong' ? 'Incorrect answer' : undefined}
+            className={`${baseClasses} ${stateClasses[state]}`}
+        >
             <span className="font-semibold z-10 relative pr-8 text-sm md:text-base leading-relaxed">{getText(option)}</span>
-            <div className="z-10 absolute right-2 top-1/2 transform -translate-y-1/2 scale-75"><SpeakerIcon textToSpeak={getSpeakableText(option)} /></div>
+            {state === 'correct' && <CheckCircle2 className="w-5 h-5 shrink-0 z-10 animate-pop-in" strokeWidth={2} aria-hidden="true" />}
+            {state === 'wrong' && <XCircle className="w-5 h-5 shrink-0 z-10 animate-pop-in" strokeWidth={2} aria-hidden="true" />}
+            {state === 'idle' && (
+                <div className="z-10 absolute right-2 top-1/2 transform -translate-y-1/2 scale-75"><SpeakerIcon textToSpeak={getSpeakableText(option)} /></div>
+            )}
         </button>
     );
 };
@@ -148,10 +163,12 @@ export const QuizView = () => {
     const [isOverdriveLoading, setIsOverdriveLoading] = useState(false);
     const [showOverdriveBanner, setShowOverdriveBanner] = useState(false);
 
-    // Auto-advance effect
+    // Auto-advance effect — after the answer-state feedback has had time to
+    // land: quick when correct, longer when wrong so the correction is readable.
     useEffect(() => {
         if (!selectedAnswer || quizState !== 'playing' || isOverdriveLoading) return;
 
+        const answeredCorrectly = areTextsEqual(selectedAnswer, questions[currentQuestionIndex].correctAnswer);
         const timer = setTimeout(async () => {
             const currentQuestion = questions[currentQuestionIndex];
             const isCorrect = areTextsEqual(selectedAnswer, currentQuestion.correctAnswer);
@@ -196,7 +213,7 @@ export const QuizView = () => {
                     setQuizState('reviewing');
                 }
             }
-        }, 500);
+        }, answeredCorrectly ? 700 : 1400);
 
         return () => clearTimeout(timer);
     }, [selectedAnswer, currentQuestionIndex, questions, quizState, isOverdriveLoading, isOverdriveActive, sourceLang, targetLang]);
@@ -226,9 +243,12 @@ export const QuizView = () => {
                             ? 'bg-night-card border-slate-700'
                             : 'bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-sm border-gold/30'}
                     `}>
-                        <h1 className={`text-3xl md:text-4xl font-extrabold mb-6 ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
+                        <h1 className={`text-3xl md:text-4xl font-extrabold mb-4 ${isHighContrast ? 'text-white' : 'text-dark-green'}`}>
                             Quiz Complete! 🎉
                         </h1>
+                        {/* Journey motif: the dot sits as far along the route as your score */}
+                        <JourneyLine progress={score / questions.length} className="mb-5 px-4" />
+
 
                         {/* Score Display */}
                         <div className="mb-6">
@@ -357,9 +377,7 @@ export const QuizView = () => {
                     <span className="text-sm font-bold text-dark-green whitespace-nowrap">
                         {currentQuestionIndex + 1} / {questions.length}
                     </span>
-                    <span className="text-xs font-black bg-amber-400 text-white px-2 py-1 rounded-full shadow-sm ml-2">
-                        LVL {profile.level}
-                    </span>
+                    <Chip variant="earned" className="ml-2">LVL {profile.level}</Chip>
                 </div>
             </div>
 
@@ -376,14 +394,24 @@ export const QuizView = () => {
 
                 {/* Options Grid */}
                 <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                    {currentQuestion.options.map((option, index) => (
-                        <QuizOption
-                            key={index}
-                            option={option}
-                            isSelected={selectedAnswer ? areTextsEqual(selectedAnswer, option) : false}
-                            onSelect={() => handleSelectAnswer(option)}
-                        />
-                    ))}
+                    {currentQuestion.options.map((option, index) => {
+                        let state: OptionState = 'idle';
+                        if (selectedAnswer) {
+                            const isThisSelected = areTextsEqual(selectedAnswer, option);
+                            const isThisCorrect = areTextsEqual(option, currentQuestion.correctAnswer);
+                            if (isThisSelected) state = isThisCorrect ? 'correct' : 'wrong';
+                            else if (isThisCorrect) state = 'reveal';
+                            else state = 'locked';
+                        }
+                        return (
+                            <QuizOption
+                                key={index}
+                                option={option}
+                                state={state}
+                                onSelect={() => handleSelectAnswer(option)}
+                            />
+                        );
+                    })}
                 </div>
             </div>
         </div>
